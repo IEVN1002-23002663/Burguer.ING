@@ -1,7 +1,724 @@
-<!-- Pantalla lista para que otro integrante desarrolle este módulo. -->
+
+<!-- ========================================= -->
+<!-- ENCABEZADO -->
+<!-- ========================================= -->
+
 <section class="page-header">
+
   <div>
-    <h1 class="page-title">Productos</h1>
+    <h1 class="page-title">
+      Productos y menú comercial
+    </h1>
+
+    <p class="page-subtitle">
+      Hamburguesas, papas, boneless, alitas y hot dogs de Burguer.ING.
+    </p>
   </div>
+
+  <div class="flex flex-wrap gap-2">
+
+    <button
+      type="button"
+      class="btn btn-outline"
+      (click)="nuevaCategoria()">
+
+      <app-icon name="plus" [size]="16"/>
+      Nueva categoría
+    </button>
+
+    <button
+      type="button"
+      class="btn btn-red"
+      (click)="crear()">
+
+      <app-icon name="plus" [size]="16"/>
+      Agregar producto
+    </button>
+
+  </div>
+
 </section>
-<div class="panel" style="min-height: 65vh;"></div>
+
+<!-- ========================================= -->
+<!-- MENSAJES -->
+<!-- ========================================= -->
+
+@if (mensaje) {
+
+  <div class="notice notice-ok mb-4">
+    {{ mensaje }}
+  </div>
+
+}
+
+@if (error) {
+
+  <div class="notice notice-error mb-4">
+    {{ error }}
+  </div>
+
+}
+
+<!-- ========================================= -->
+<!-- INDICADORES -->
+<!-- ========================================= -->
+
+<section class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+
+  <div class="panel p-5">
+
+    <p class="kpi-label">
+      Productos registrados
+    </p>
+
+    <p class="kpi-number">
+      {{ productos.length }}
+    </p>
+
+  </div>
+
+  <div class="panel p-5">
+
+    <p class="kpi-label">
+      Disponibles
+    </p>
+
+    <p class="kpi-number metric-green">
+      {{ disponibles }}
+    </p>
+
+  </div>
+
+  <div class="panel p-5">
+
+    <p class="kpi-label">
+      Desactivados
+    </p>
+
+    <p class="kpi-number">
+      {{ ocultos }}
+    </p>
+
+  </div>
+
+</section>
+
+<!-- ========================================= -->
+<!-- BUSCADOR Y PRODUCTOS OCULTOS -->
+<!-- ========================================= -->
+
+<div class="panel p-4 mb-5 space-y-3">
+
+  <input
+    type="search"
+    class="form-control"
+    placeholder="Buscar hamburguesas, papas, boneless..."
+    [(ngModel)]="busqueda"
+    aria-label="Buscar producto"
+  />
+
+  <div class="flex flex-wrap items-center justify-between gap-3">
+
+    <p class="text-sm text-zinc-500">
+      {{ filtrados.length }} producto(s) mostrado(s)
+    </p>
+
+    <button
+      type="button"
+      class="btn btn-outline"
+      (click)="alternarOcultos()">
+
+      {{
+        mostrarOcultos
+          ? 'Ocultar desactivados'
+          : 'Mostrar desactivados (' + ocultos + ')'
+      }}
+
+    </button>
+
+  </div>
+
+  <!-- FILTROS DE CATEGORÍAS -->
+
+  <div class="filter-row">
+
+    <button
+      type="button"
+      class="filter-pill"
+      [class.selected]="categoriaFiltro === 0"
+      (click)="categoriaFiltro = 0">
+
+      Todos
+    </button>
+
+    @for (
+      categoria of categoriasVisibles;
+      track categoria.id_categoria_producto
+    ) {
+
+      <div class="flex items-center gap-1">
+
+        <button
+          type="button"
+          class="filter-pill"
+          [class.selected]="
+            categoriaFiltro === categoria.id_categoria_producto
+          "
+          (click)="
+            categoriaFiltro = categoria.id_categoria_producto
+          ">
+
+          {{ categoria.nombre }}
+
+        </button>
+
+        <button
+          type="button"
+          class="text-zinc-400 hover:text-red-600 p-1"
+          [title]="'Editar categoría ' + categoria.nombre"
+          (click)="editarCategoria(categoria)">
+
+          <app-icon name="edit" [size]="13"/>
+
+        </button>
+
+      </div>
+
+    }
+
+  </div>
+
+</div>
+
+<!-- ========================================= -->
+<!-- CATÁLOGO DE PRODUCTOS -->
+<!-- ========================================= -->
+
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+
+  @for (
+    producto of filtrados;
+    track producto.id_producto
+  ) {
+
+    <article
+      class="panel p-4 flex flex-col"
+      [class.opacity-65]="!producto.disponible">
+
+      <!-- IMAGEN -->
+
+      <div
+        class="relative h-48 bg-zinc-100 rounded-xl mb-4 overflow-hidden flex items-center justify-center">
+
+        @if (!imagenesFallidas.has(producto.id_producto)) {
+
+          <img
+            class="w-full h-full object-cover"
+            [src]="rutaImagen(producto)"
+            [alt]="'Fotografía de ' + producto.nombre"
+            loading="lazy"
+            (error)="registrarImagenFallida(producto.id_producto)"
+          />
+
+        } @else {
+
+          <div class="text-center text-zinc-400 px-4">
+
+            <app-icon name="box" [size]="32"/>
+
+            <p class="text-xs mt-2">
+              Fotografía pendiente
+            </p>
+
+          </div>
+
+        }
+
+        <!-- PRECIO SOBRE LA IMAGEN -->
+
+        <span
+          class="absolute right-3 bottom-3 bg-red-600 text-white text-lg font-extrabold px-3 py-1 rounded-lg shadow">
+
+          {{
+            producto.precio
+              | currency:'MXN':'symbol':'1.2-2'
+          }}
+
+        </span>
+
+      </div>
+
+      <!-- IDENTIFICADOR Y DISPONIBILIDAD -->
+
+      <div class="flex justify-between items-center gap-2 mb-2">
+
+        <span class="chip chip-gray">
+          PROD-{{ producto.id_producto }}
+        </span>
+
+        <span
+          class="chip"
+          [class.chip-green]="producto.disponible"
+          [class.chip-gray]="!producto.disponible">
+
+          {{
+            producto.disponible
+              ? 'Disponible'
+              : 'Desactivado'
+          }}
+
+        </span>
+
+      </div>
+
+      <!-- INFORMACIÓN -->
+
+      <h2 class="heading-font font-extrabold text-lg">
+        {{ producto.nombre }}
+      </h2>
+
+      <p class="text-xs text-red-600 font-semibold mt-1">
+        {{ producto.categoria }}
+      </p>
+
+      <p class="text-sm text-zinc-500 mt-2 mb-5">
+        {{ producto.descripcion || 'Sin descripción' }}
+      </p>
+
+      <!-- COSTO Y ACCIONES -->
+
+      <div
+        class="mt-auto pt-4 border-t border-zinc-100 flex items-end justify-between gap-2">
+
+        <div>
+
+          <p class="text-xs text-zinc-400">
+            Costo variable extra
+          </p>
+
+          <p class="font-semibold">
+            {{
+              producto.costo_variable_extra
+                | currency:'MXN':'symbol':'1.2-2'
+            }}
+          </p>
+
+        </div>
+
+        <div class="flex gap-3 text-sm">
+
+          <button
+            type="button"
+            class="btn-link-red"
+            (click)="editar(producto)">
+
+            Editar
+
+          </button>
+
+          <button
+            type="button"
+            class="text-zinc-600 hover:text-red-600"
+            (click)="cambiarDisponibilidad(producto)">
+
+            {{
+              producto.disponible
+                ? 'Ocultar'
+                : 'Activar'
+            }}
+
+          </button>
+
+        </div>
+
+      </div>
+
+    </article>
+
+  } @empty {
+
+    <div class="panel empty-state col-span-full">
+
+      {{
+        cargando
+          ? 'Cargando productos...'
+          : 'No hay productos para este filtro.'
+      }}
+
+    </div>
+
+  }
+
+</div>
+
+<!-- ========================================= -->
+<!-- MODAL AGREGAR O EDITAR PRODUCTO -->
+<!-- ========================================= -->
+
+@if (modalProducto) {
+
+  <div
+    class="modal-backdrop"
+    (click)="modalProducto = false">
+
+    <div
+      class="modal-panel"
+      role="dialog"
+      aria-modal="true"
+      (click)="$event.stopPropagation()">
+
+      <div class="modal-header">
+
+        <h2 class="panel-title">
+
+          {{
+            editandoId !== null
+              ? 'Editar producto'
+              : 'Agregar producto'
+          }}
+
+        </h2>
+
+        <button
+          type="button"
+          (click)="modalProducto = false"
+          aria-label="Cerrar">
+
+          <app-icon name="close"/>
+
+        </button>
+
+      </div>
+
+      <form (ngSubmit)="guardar()">
+
+        <div class="modal-body space-y-4">
+
+          @if (errorModal) {
+
+            <div class="notice notice-error">
+              {{ errorModal }}
+            </div>
+
+          }
+
+          <div class="form-grid">
+
+            <div class="form-field">
+
+              <label for="nombreProducto">
+                Nombre del producto *
+              </label>
+
+              <input
+                id="nombreProducto"
+                name="nombre"
+                class="form-control"
+                [(ngModel)]="formulario.nombre"
+                maxlength="120"
+                required
+              />
+
+            </div>
+
+            <div class="form-field">
+
+              <label for="categoriaProducto">
+                Categoría *
+              </label>
+
+              <select
+                id="categoriaProducto"
+                name="categoria"
+                class="form-control"
+                [(ngModel)]="formulario.id_categoria_producto"
+                required>
+
+                <option [ngValue]="0">
+                  Seleccionar
+                </option>
+
+                @for (
+                  categoria of categoriasOrdenadas;
+                  track categoria.id_categoria_producto
+                ) {
+
+                  <option
+                    [ngValue]="categoria.id_categoria_producto">
+
+                    {{ categoria.nombre }}
+
+                  </option>
+
+                }
+
+              </select>
+
+            </div>
+
+          </div>
+
+          <div class="form-field">
+
+            <label for="descripcionProducto">
+              Descripción
+            </label>
+
+            <textarea
+              id="descripcionProducto"
+              name="descripcion"
+              class="form-control"
+              [(ngModel)]="formulario.descripcion"
+              rows="3"></textarea>
+
+          </div>
+
+          <div class="form-grid">
+
+            <div class="form-field">
+
+              <label for="precioProducto">
+                Precio de venta (MXN) *
+              </label>
+
+              <input
+                id="precioProducto"
+                name="precio"
+                type="number"
+                class="form-control"
+                [(ngModel)]="formulario.precio"
+                min="0.01"
+                step="0.01"
+                required
+              />
+
+            </div>
+
+            <div class="form-field">
+
+              <label for="costoProducto">
+                Costo variable extra (MXN)
+              </label>
+
+              <input
+                id="costoProducto"
+                name="costo"
+                type="number"
+                class="form-control"
+                [(ngModel)]="formulario.costo_variable_extra"
+                min="0"
+                step="0.01"
+              />
+
+            </div>
+
+          </div>
+
+          <!-- IMAGEN -->
+
+          <div class="form-field">
+
+            <label for="imagenProducto">
+              Archivo de fotografía
+            </label>
+
+            <input
+              id="imagenProducto"
+              name="imagen"
+              class="form-control"
+              [(ngModel)]="formulario.imagen"
+              placeholder="civil.jpg"
+            />
+
+            <p class="text-xs text-zinc-500">
+
+              Pon la imagen en
+
+              <strong>public/imagenes</strong>
+
+              y escribe su nombre exacto.
+
+              Ejemplos:
+
+              <strong>civil.jpg</strong>,
+
+              <strong>Industrial.jpg</strong>,
+
+              <strong>hot dog.jpg</strong>.
+
+            </p>
+
+            @if (formulario.nombre.trim()) {
+
+              <p class="text-xs text-red-600 break-all">
+
+                Ruta:
+                {{ rutaImagenFormulario() }}
+
+              </p>
+
+            }
+
+          </div>
+
+          <p class="text-xs text-zinc-500">
+
+            Las recetas se configuran desde
+            «Recetas y producción».
+
+          </p>
+
+        </div>
+
+        <div class="modal-footer">
+
+          <button
+            type="button"
+            class="btn btn-outline"
+            (click)="modalProducto = false">
+
+            Cancelar
+
+          </button>
+
+          <button
+            type="submit"
+            class="btn btn-red"
+            [disabled]="guardando">
+
+            {{
+              guardando
+                ? 'Guardando...'
+                : 'Guardar producto'
+            }}
+
+          </button>
+
+        </div>
+
+      </form>
+
+    </div>
+
+  </div>
+
+}
+
+<!-- ========================================= -->
+<!-- MODAL AGREGAR O EDITAR CATEGORÍA -->
+<!-- ========================================= -->
+
+@if (modalCategoria) {
+
+  <div
+    class="modal-backdrop"
+    (click)="modalCategoria = false">
+
+    <div
+      class="modal-panel"
+      role="dialog"
+      aria-modal="true"
+      (click)="$event.stopPropagation()">
+
+      <div class="modal-header">
+
+        <h2 class="panel-title">
+
+          {{
+            editandoCategoria !== null
+              ? 'Editar categoría'
+              : 'Nueva categoría'
+          }}
+
+        </h2>
+
+        <button
+          type="button"
+          (click)="modalCategoria = false"
+          aria-label="Cerrar">
+
+          <app-icon name="close"/>
+
+        </button>
+
+      </div>
+
+      <form (ngSubmit)="guardarCategoria()">
+
+        <div class="modal-body space-y-4">
+
+          @if (errorModal) {
+
+            <div class="notice notice-error">
+              {{ errorModal }}
+            </div>
+
+          }
+
+          <div class="form-field">
+
+            <label for="nombreCategoria">
+              Nombre *
+            </label>
+
+            <input
+              id="nombreCategoria"
+              name="nombreCat"
+              class="form-control"
+              [(ngModel)]="formularioCategoria.nombre"
+              maxlength="100"
+              required
+            />
+
+          </div>
+
+          <div class="form-field">
+
+            <label for="descripcionCategoria">
+              Descripción
+            </label>
+
+            <textarea
+              id="descripcionCategoria"
+              name="descripcionCat"
+              class="form-control"
+              [(ngModel)]="formularioCategoria.descripcion"
+              rows="3"></textarea>
+
+          </div>
+
+        </div>
+
+        <div class="modal-footer">
+
+          <button
+            type="button"
+            class="btn btn-outline"
+            (click)="modalCategoria = false">
+
+            Cancelar
+
+          </button>
+
+          <button
+            type="submit"
+            class="btn btn-red"
+            [disabled]="guardando">
+
+            {{
+              guardando
+                ? 'Guardando...'
+                : 'Guardar categoría'
+            }}
+
+          </button>
+
+        </div>
+
+      </form>
+
+    </div>
+
+  </div>
+
+}

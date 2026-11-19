@@ -1,57 +1,274 @@
-  <div class="layout-shell">
-    @if (menuAbierto) {
-      <div class="fixed inset-0 bg-black/50 z-20 lg:hidden" (click)="menuAbierto=false"></div>
-    }
-    <aside class="sidebar" [class.is-open]="menuAbierto">
-      <a routerLink="/dashboard" class="logo-band" (click)="menuAbierto=false">
-        <span class="logo-square">◎</span>
-        <span class="logo-name">Burguer<span class="logo-ing">.ING</span></span>
-      </a>
-      <div class="branch-box">
-        <small>SUCURSAL MATRIZ</small>
-        <strong class="flex justify-between items-center">León, Guanajuato <span class="bg-emerald-400 w-2 h-2 rounded-full"></span></strong>
-      </div>
-      <nav class="nav-list" aria-label="Módulos administrativos">
-        @for (link of links; track link.ruta) {
-          <a class="nav-link" [routerLink]="link.ruta" routerLinkActive="active" (click)="menuAbierto=false">
-            <app-icon [name]="link.icono" [size]="17" class="ico" />
-            <span>{{link.titulo}}</span>
-          </a>
-        }
-      </nav>
-      <div class="sidebar-footer">
-        <div class="text-[11px] text-zinc-400 mb-3 px-2">Panel escolar · Angular + Flask</div>
-        <button (click)="cerrarSesion()" class="nav-link w-full text-left">
-          <app-icon name="logout" [size]="17" /> Cerrar sesión
-        </button>
-      </div>
-    </aside>
-    <div class="main-content">
-      <header class="topbar">
-        <div class="flex items-center gap-3 flex-1 min-w-0">
-          <button type="button" aria-label="Abrir menú" class="lg:hidden p-2" (click)="menuAbierto=!menuAbierto">
-            <app-icon name="menu" [size]="22" />
-          </button>
-          <div class="relative w-full max-w-[485px] hidden sm:block">
-            <app-icon name="search" [size]="17" class="absolute left-4 top-[13px] text-zinc-400" />
-            <input class="bg-zinc-100 border-none rounded-xl px-11 py-3 w-full text-xs outline-none" placeholder="Buscar en Burguer.ING..." [(ngModel)]="busqueda" (keyup.enter)="buscar()" />
-          </div>
-        </div>
-        <div class="flex items-center gap-3 sm:gap-5">
-          <span class="hidden md:flex text-xs font-bold bg-zinc-100 rounded-xl px-4 py-2 items-center gap-2">
-            <app-icon name="shop" [size]="16" /> Panel administrativo
-          </span>
-          <span class="hidden sm:inline-block text-zinc-400"><app-icon name="bell" [size]="19" /></span>
-          <div class="flex items-center gap-3 border-l pl-3 sm:pl-5 border-zinc-200">
-            <span class="h-9 w-9 bg-[#e5232a] rounded-full text-white grid place-items-center font-extrabold text-xs">{{ iniciales }}</span>
-            <div class="hidden sm:block leading-tight">
-              <div class="text-xs font-bold text-neutral-950">{{ auth.usuario()?.nombre || 'Usuario' }}</div>
-              <div class="text-[11px] text-red-600 font-semibold">{{ auth.usuario()?.rol }}</div>
-            </div>
-          </div>
-          <button aria-label="Cerrar sesión" class="text-zinc-400" (click)="cerrarSesion()"><app-icon name="logout" [size]="18" /></button>
-        </div>
-      </header>
-      <main class="page-space"><router-outlet /></main>
+
+<div class="layout-shell">
+
+  @if (menuAbierto) {
+    <div
+      class="fixed inset-0 bg-black/50 z-20 lg:hidden"
+      (click)="menuAbierto=false">
     </div>
+  }
+
+  <!-- ====================================== -->
+  <!-- MENÚ LATERAL -->
+  <!-- ====================================== -->
+
+  <aside class="sidebar" [class.is-open]="menuAbierto">
+
+    <!-- LOGO ORIGINAL CON IMAGEN PERSONALIZADA -->
+
+    <a
+      routerLink="/dashboard"
+      class="logo-band"
+      (click)="menuAbierto=false">
+
+      <!-- Cuadro rojo con bordes redondeados -->
+      <span class="logo-square overflow-hidden">
+
+        <img
+          src="/imagenes/image.jpg"
+          alt="Logo de Burguer.ING"
+          class="w-full h-full object-cover"
+        />
+
+      </span>
+
+      <!-- Nombre original -->
+      <span class="logo-name">
+        Burguer<span class="logo-ing">.ING</span>
+      </span>
+
+    </a>
+
+    <!-- ====================================== -->
+    <!-- SUCURSAL -->
+    <!-- ====================================== -->
+
+    <div class="branch-box">
+
+      <small>SUCURSAL MATRIZ</small>
+
+      <strong class="flex justify-between items-center">
+
+        León, Guanajuato
+
+        <span
+          class="bg-emerald-400 w-2 h-2 rounded-full">
+        </span>
+
+      </strong>
+
+    </div>
+
+    <!-- ====================================== -->
+    <!-- MÓDULOS ADMINISTRATIVOS -->
+    <!-- ====================================== -->
+
+    <nav
+      class="nav-list"
+      aria-label="Módulos administrativos">
+
+      @for (link of links; track link.ruta) {
+
+        <a
+          class="nav-link"
+          [routerLink]="link.ruta"
+          routerLinkActive="active"
+          (click)="menuAbierto=false">
+
+          <app-icon
+            [name]="link.icono"
+            [size]="17"
+            class="ico"
+          />
+
+          <span>{{ link.titulo }}</span>
+
+        </a>
+
+      }
+
+    </nav>
+
+    <!-- ====================================== -->
+    <!-- PIE DEL MENÚ -->
+    <!-- ====================================== -->
+
+    <div class="sidebar-footer">
+
+      <div class="text-[11px] text-zinc-400 mb-3 px-2">
+
+        Panel escolar · Angular + Flask
+
+      </div>
+
+      <button
+        type="button"
+        (click)="cerrarSesion()"
+        class="nav-link w-full text-left">
+
+        <app-icon
+          name="logout"
+          [size]="17"
+        />
+
+        Cerrar sesión
+
+      </button>
+
+    </div>
+
+  </aside>
+
+  <!-- ====================================== -->
+  <!-- CONTENIDO PRINCIPAL -->
+  <!-- ====================================== -->
+
+  <div class="main-content">
+
+    <!-- ====================================== -->
+    <!-- BARRA SUPERIOR -->
+    <!-- ====================================== -->
+
+    <header class="topbar">
+
+      <!-- BUSCADOR -->
+
+      <div class="flex items-center gap-3 flex-1 min-w-0">
+
+        <!-- Botón para menú móvil -->
+
+        <button
+          type="button"
+          aria-label="Abrir menú"
+          class="lg:hidden p-2"
+          (click)="menuAbierto=!menuAbierto">
+
+          <app-icon
+            name="menu"
+            [size]="22"
+          />
+
+        </button>
+
+        <!-- Campo de búsqueda -->
+
+        <div
+          class="relative w-full max-w-[485px] hidden sm:block">
+
+          <app-icon
+            name="search"
+            [size]="17"
+            class="absolute left-4 top-[13px] text-zinc-400"
+          />
+
+          <input
+            class="bg-zinc-100 border-none rounded-xl px-11 py-3 w-full text-xs outline-none"
+            placeholder="Buscar en Burguer.ING..."
+            [(ngModel)]="busqueda"
+            (keyup.enter)="buscar()"
+          />
+
+        </div>
+
+      </div>
+
+      <!-- ====================================== -->
+      <!-- OPCIONES SUPERIORES -->
+      <!-- ====================================== -->
+
+      <div class="flex items-center gap-3 sm:gap-5">
+
+        <!-- Panel administrativo -->
+
+        <span
+          class="hidden md:flex text-xs font-bold bg-zinc-100 rounded-xl px-4 py-2 items-center gap-2">
+
+          <app-icon
+            name="shop"
+            [size]="16"
+          />
+
+          Panel administrativo
+
+        </span>
+
+        <!-- Notificaciones -->
+
+        <span class="hidden sm:inline-block text-zinc-400">
+
+          <app-icon
+            name="bell"
+            [size]="19"
+          />
+
+        </span>
+
+        <!-- ====================================== -->
+        <!-- USUARIO CON SESIÓN INICIADA -->
+        <!-- ====================================== -->
+
+        <div
+          class="flex items-center gap-3 border-l pl-3 sm:pl-5 border-zinc-200">
+
+          <!-- Iniciales del usuario -->
+
+          <span
+            class="h-9 w-9 bg-[#e5232a] rounded-full text-white grid place-items-center font-extrabold text-xs">
+
+            {{ iniciales }}
+
+          </span>
+
+          <!-- Nombre y rol -->
+
+          <div class="hidden sm:block leading-tight">
+
+            <div class="text-xs font-bold text-neutral-950">
+
+              {{ auth.usuario()?.nombre || 'Usuario' }}
+
+            </div>
+
+            <div
+              class="text-[11px] text-red-600 font-semibold">
+
+              {{ auth.usuario()?.rol }}
+
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- Botón cerrar sesión -->
+
+        <button
+          type="button"
+          aria-label="Cerrar sesión"
+          class="text-zinc-400"
+          (click)="cerrarSesion()">
+
+          <app-icon
+            name="logout"
+            [size]="18"
+          />
+
+        </button>
+
+      </div>
+
+    </header>
+
+    <!-- ====================================== -->
+    <!-- CONTENIDO DE LOS MÓDULOS -->
+    <!-- ====================================== -->
+
+    <main class="page-space">
+
+      <router-outlet />
+
+    </main>
+
   </div>
+
+</div>

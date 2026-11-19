@@ -1,7 +1,635 @@
-<!-- Pantalla lista para que otro integrante desarrolle este módulo. -->
+<!-- ====================================== -->
+<!-- ENCABEZADO -->
+<!-- ====================================== -->
+
 <section class="page-header">
   <div>
     <h1 class="page-title">Recetas y producción</h1>
+
+    <p class="page-subtitle">
+      Control de ingredientes, costos y preparación de pedidos.
+    </p>
+  </div>
+
+  <div class="flex flex-wrap gap-2">
+    <button type="button" class="btn btn-outline" (click)="cargar()">
+      <app-icon name="refresh" [size]="16" />
+      Actualizar
+    </button>
+
+    @if (tab === 'recetas') {
+
+    <button type="button" class="btn btn-red" (click)="nuevaReceta()">
+      <app-icon name="plus" [size]="16" />
+      Nueva receta
+    </button>
+
+    }
   </div>
 </section>
-<div class="panel" style="min-height: 65vh;"></div>
+
+<!-- ====================================== -->
+<!-- MENSAJES -->
+<!-- ====================================== -->
+
+@if (mensaje) {
+<div class="notice notice-ok mb-4">{{ mensaje }}</div>
+} @if (error) {
+<div class="notice notice-error mb-4">{{ error }}</div>
+}
+
+<!-- ====================================== -->
+<!-- INDICADORES -->
+<!-- ====================================== -->
+
+<section class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
+  <div class="panel p-5">
+    <p class="kpi-label">Recetas registradas</p>
+
+    <p class="kpi-number">{{ recetas.length }}</p>
+  </div>
+
+  <div class="panel p-5">
+    <p class="kpi-label">Productos sin receta</p>
+
+    <p class="kpi-number">{{ productosSinReceta.length }}</p>
+  </div>
+
+  <div class="panel p-5">
+    <p class="kpi-label">Producciones en proceso</p>
+
+    <p class="kpi-number metric-green">{{ enProceso }}</p>
+  </div>
+</section>
+
+<!-- ====================================== -->
+<!-- PESTAÑAS -->
+<!-- ====================================== -->
+
+<div class="filter-row mb-5">
+  <button
+    type="button"
+    class="filter-pill"
+    [class.selected]="tab === 'recetas'"
+    (click)="tab = 'recetas'"
+  >
+    Recetas
+  </button>
+
+  <button
+    type="button"
+    class="filter-pill"
+    [class.selected]="tab === 'produccion'"
+    (click)="tab = 'produccion'"
+  >
+    Producción
+  </button>
+</div>
+
+<!-- ====================================== -->
+<!-- PESTAÑA RECETAS -->
+<!-- ====================================== -->
+
+@if (tab === 'recetas') {
+
+<!-- PRODUCTOS SIN RECETA -->
+
+@if (productosSinReceta.length) {
+
+<div class="alert-banner mb-5">
+  <strong>Hay productos sin receta:</strong>
+
+  @for ( producto of productosSinReceta; track producto.id_producto; let ultimo
+  = $last ) { {{ producto.nombre }}{{ ultimo ? '.' : ', ' }} } Regístrales los
+  ingredientes antes de producir pedidos.
+</div>
+
+}
+
+<!-- BUSCADOR -->
+
+<div class="panel p-4 mb-5">
+  <input
+    class="form-control"
+    type="search"
+    [(ngModel)]="busqueda"
+    placeholder="Buscar receta por nombre del producto..."
+    aria-label="Buscar receta"
+  />
+</div>
+
+<!-- TARJETAS DE RECETAS -->
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+  @for ( receta of recetasFiltradas; track receta.id_receta ) {
+
+  <article class="panel p-5 flex flex-col">
+    <!-- INFORMACIÓN GENERAL -->
+
+    <div class="flex flex-wrap justify-between gap-2 mb-4">
+      <div>
+        <span class="chip chip-gray"> REC-{{ receta.id_receta }} </span>
+
+        <h2 class="heading-font text-lg font-extrabold mt-2">
+          {{ receta.producto }}
+        </h2>
+
+        <p class="text-xs text-zinc-500">
+          Rendimiento: {{ receta.rendimiento }} unidad(es)
+        </p>
+      </div>
+
+      <span class="chip chip-green">
+        {{ receta.ingredientes.length }} ingredientes
+      </span>
+    </div>
+
+    <!-- INGREDIENTES -->
+
+    <div class="space-y-2 mb-4">
+      @for ( ingrediente of receta.ingredientes; track
+      ingrediente.id_materia_prima ) {
+
+      <div
+        class="flex justify-between gap-4 border-b border-zinc-100 pb-2 text-sm"
+      >
+        <span> {{ ingrediente.materia_prima }} </span>
+
+        <strong class="whitespace-nowrap">
+          {{ ingrediente.cantidad }} {{ ingrediente.unidad_medida }}
+        </strong>
+      </div>
+
+      }
+    </div>
+
+    <!-- INSTRUCCIONES -->
+
+    <p class="text-sm text-zinc-500 mb-4">
+      {{ receta.instrucciones || 'Sin instrucciones de preparación.' }}
+    </p>
+
+    <!-- RESUMEN FINANCIERO -->
+
+    <div
+      class="grid grid-cols-3 gap-2 rounded-xl bg-zinc-50 p-3 text-center mt-auto"
+    >
+      <div>
+        <p class="text-[10px] uppercase text-zinc-400 font-bold">
+          Costo estimado
+        </p>
+
+        <p class="text-sm font-extrabold">
+          {{ costoPorUnidad(receta) | currency:'MXN':'symbol':'1.2-2' }}
+        </p>
+      </div>
+
+      <div>
+        <p class="text-[10px] uppercase text-zinc-400 font-bold">
+          Margen estimado
+        </p>
+
+        <p
+          class="text-sm font-extrabold"
+          [class.metric-green]="margen(receta) >= 0"
+          [class.metric-red]="margen(receta) < 0"
+        >
+          {{ margen(receta) | currency:'MXN':'symbol':'1.2-2' }}
+        </p>
+      </div>
+
+      <div>
+        <p class="text-[10px] uppercase text-zinc-400 font-bold">
+          Capacidad estimada
+        </p>
+
+        <p class="text-sm font-extrabold">{{ unidadesPosibles(receta) }} u.</p>
+      </div>
+    </div>
+
+    <!-- ACCIONES -->
+
+    <div class="border-t border-zinc-100 mt-4 pt-3 flex justify-end gap-4">
+      <button type="button" class="btn-link-red" (click)="editarReceta(receta)">
+        Editar receta
+      </button>
+
+      <button
+        type="button"
+        class="text-sm text-zinc-500 hover:text-red-600"
+        (click)="eliminarReceta(receta)"
+      >
+        Eliminar
+      </button>
+    </div>
+  </article>
+
+  } @empty {
+
+  <div class="panel empty-state col-span-full">
+    {{ cargando ? 'Cargando recetas...' : 'No se encontraron recetas.' }}
+  </div>
+
+  }
+</div>
+
+<p class="text-xs text-zinc-500 mt-4">
+  Costos y márgenes aproximados calculados con los precios actuales de materias
+  primas. La capacidad utiliza las existencias actuales y no garantiza
+  disponibilidad para otros pedidos.
+</p>
+
+} @else {
+
+<!-- ====================================== -->
+<!-- PESTAÑA PRODUCCIÓN -->
+<!-- ====================================== -->
+
+<div class="panel p-5 mb-5">
+  <h2 class="panel-title mb-2">Iniciar producción de un pedido</h2>
+
+  <p class="text-sm text-zinc-500 mb-4">
+    Primero registra un pedido desde el módulo Pedidos. Al iniciar la
+    producción, Flask valida los ingredientes y descuenta el inventario
+    disponible.
+  </p>
+
+  <div class="flex flex-wrap gap-3 items-end">
+    <!-- ID PEDIDO -->
+
+    <div class="form-field">
+      <label for="pedidoProd"> ID del pedido </label>
+
+      <input
+        id="pedidoProd"
+        class="form-control"
+        type="number"
+        min="1"
+        step="1"
+        [(ngModel)]="idPedidoProduccion"
+        placeholder="Ej. 1"
+      />
+    </div>
+
+    <!-- ID RESPONSABLE -->
+
+    <div class="form-field">
+      <label for="usuarioProd"> ID del responsable </label>
+
+      <input
+        id="usuarioProd"
+        class="form-control"
+        type="number"
+        min="1"
+        step="1"
+        [(ngModel)]="idUsuarioProduccion"
+      />
+    </div>
+
+    <!-- BOTÓN INICIAR -->
+
+    <button
+      type="button"
+      class="btn btn-red"
+      [disabled]="guardando"
+      (click)="iniciarProduccion()"
+    >
+      {{ guardando ? 'Iniciando...' : 'Iniciar producción' }}
+    </button>
+  </div>
+</div>
+
+<!-- TABLA PRODUCCIONES -->
+
+<div class="panel data-table-wrap">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Producción</th>
+        <th>Pedido</th>
+        <th>Responsable</th>
+        <th>Inicio</th>
+        <th>Estado</th>
+        <th>Inventario</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      @for ( p of producciones; track p.id_produccion ) {
+
+      <tr>
+        <td class="font-bold">PROD-{{ p.id_produccion }}</td>
+
+        <td>#{{ p.id_pedido }}</td>
+
+        <td>{{ p.usuario || p.id_usuario }}</td>
+
+        <td>{{ p.fecha_inicio || '—' }}</td>
+
+        <td>
+          <span
+            class="chip"
+            [class.chip-green]="
+                  p.estado === 'Completada' ||
+                  p.estado === 'Terminada'
+                "
+            [class.chip-yellow]="p.estado === 'En proceso'"
+            [class.chip-gray]="p.estado === 'Pendiente'"
+          >
+            {{ p.estado }}
+          </span>
+        </td>
+
+        <td>{{ p.inventario_descontado ? 'Descontado' : 'Pendiente' }}</td>
+
+        <td>
+          <div class="actions-inline">
+            <button
+              type="button"
+              class="btn-link-red"
+              (click)="verProduccion(p)"
+            >
+              Ver
+            </button>
+
+            @if (p.estado === 'En proceso') {
+
+            <button
+              type="button"
+              class="btn btn-green btn-small"
+              (click)="terminarProduccion(p)"
+            >
+              Terminar
+            </button>
+
+            }
+          </div>
+        </td>
+      </tr>
+
+      } @empty {
+
+      <tr>
+        <td colspan="7" class="empty-state">
+          Aún no hay producciones registradas.
+        </td>
+      </tr>
+
+      }
+    </tbody>
+  </table>
+</div>
+
+}
+
+<!-- ====================================== -->
+<!-- MODAL: CREAR O EDITAR RECETA -->
+<!-- ====================================== -->
+
+@if (modalReceta) {
+
+<div class="modal-backdrop" (click)="modalReceta = false">
+  <div
+    class="modal-panel"
+    role="dialog"
+    aria-modal="true"
+    (click)="$event.stopPropagation()"
+  >
+    <!-- ENCABEZADO MODAL -->
+
+    <div class="modal-header">
+      <h2 class="panel-title">
+        {{ idRecetaEditando !== null ? 'Editar receta' : 'Nueva receta' }}
+      </h2>
+
+      <button type="button" aria-label="Cerrar" (click)="modalReceta = false">
+        <app-icon name="close" />
+      </button>
+    </div>
+
+    <form (ngSubmit)="guardarReceta()">
+      <div class="modal-body space-y-4">
+        @if (errorModal) {
+
+        <div class="notice notice-error">{{ errorModal }}</div>
+
+        }
+
+        <!-- PRODUCTO Y RENDIMIENTO -->
+
+        <div class="form-grid">
+          <div class="form-field">
+            <label for="recetaProducto"> Producto * </label>
+
+            <select
+              id="recetaProducto"
+              class="form-control"
+              name="producto"
+              [(ngModel)]="formulario.id_producto"
+              [disabled]="idRecetaEditando !== null"
+            >
+              <option [ngValue]="0">Seleccionar...</option>
+
+              @if (idRecetaEditando !== null) { @for ( producto of productos;
+              track producto.id_producto ) { @if ( producto.id_producto ===
+              formulario.id_producto ) {
+
+              <option [ngValue]="producto.id_producto">
+                {{ producto.nombre }}
+              </option>
+
+              } } } @else { @for ( producto of productosSinReceta; track
+              producto.id_producto ) {
+
+              <option [ngValue]="producto.id_producto">
+                {{ producto.nombre }}
+              </option>
+
+              } }
+            </select>
+          </div>
+
+          <div class="form-field">
+            <label for="recetaRendimiento"> Rendimiento (unidades) * </label>
+
+            <input
+              id="recetaRendimiento"
+              type="number"
+              class="form-control"
+              name="rendimiento"
+              min="1"
+              step="1"
+              [(ngModel)]="formulario.rendimiento"
+            />
+          </div>
+        </div>
+
+        <!-- INSTRUCCIONES -->
+
+        <div class="form-field">
+          <label for="recetaInstrucciones">
+            Instrucciones de preparación
+          </label>
+
+          <textarea
+            id="recetaInstrucciones"
+            class="form-control"
+            name="instrucciones"
+            [(ngModel)]="formulario.instrucciones"
+            rows="3"
+          ></textarea>
+        </div>
+
+        <!-- INGREDIENTES -->
+
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <h3 class="font-bold">Ingredientes y cantidades</h3>
+
+          <button
+            type="button"
+            class="btn btn-outline btn-small"
+            (click)="agregarIngrediente()"
+          >
+            <app-icon name="plus" [size]="14" />
+            Añadir ingrediente
+          </button>
+        </div>
+
+        @for ( ingrediente of formulario.ingredientes; track $index; let i =
+        $index ) {
+
+        <div class="flex flex-wrap items-end gap-2">
+          <!-- MATERIA PRIMA -->
+
+          <div class="form-field flex-1">
+            <label [for]="'materia-' + i"> Materia prima * </label>
+
+            <select
+              class="form-control"
+              [id]="'materia-' + i"
+              [name]="'materia-' + i"
+              [(ngModel)]="ingrediente.id_materia_prima"
+            >
+              <option [ngValue]="0">Seleccionar...</option>
+
+              @for ( materia of materias; track materia.id_materia_prima ) {
+
+              <option [ngValue]="materia.id_materia_prima">
+                {{ materia.nombre }} ({{ materia.unidad_medida }})
+              </option>
+
+              }
+            </select>
+          </div>
+
+          <!-- CANTIDAD -->
+
+          <div class="form-field w-32">
+            <label [for]="'cantidad-' + i"> Cantidad * </label>
+
+            <input
+              class="form-control"
+              [id]="'cantidad-' + i"
+              type="number"
+              step="0.001"
+              min="0.001"
+              [name]="'cantidad-' + i"
+              [(ngModel)]="ingrediente.cantidad"
+            />
+          </div>
+
+          <!-- ELIMINAR INGREDIENTE -->
+
+          <button
+            type="button"
+            class="btn btn-outline"
+            (click)="quitarIngrediente(i)"
+            title="Quitar ingrediente"
+          >
+            <app-icon name="trash" [size]="16" />
+          </button>
+        </div>
+
+        }
+
+        <p class="text-xs text-zinc-500">
+          Usa la unidad de cada materia prima (g, ml o pza). Guardar una receta
+          no descuenta inventario.
+        </p>
+      </div>
+
+      <!-- BOTONES DEL MODAL -->
+
+      <div class="modal-footer">
+        <button
+          type="button"
+          class="btn btn-outline"
+          (click)="modalReceta = false"
+        >
+          Cancelar
+        </button>
+
+        <button type="submit" class="btn btn-red" [disabled]="guardando">
+          {{ guardando ? 'Guardando...' : 'Guardar receta' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+}
+
+<!-- ====================================== -->
+<!-- MODAL: DETALLES DE PRODUCCIÓN -->
+<!-- ====================================== -->
+
+@if (produccionSeleccionada) {
+
+<div class="modal-backdrop" (click)="produccionSeleccionada = null">
+  <div
+    class="modal-panel"
+    role="dialog"
+    aria-modal="true"
+    (click)="$event.stopPropagation()"
+  >
+    <div class="modal-header">
+      <h2 class="panel-title">
+        Producción #{{ produccionSeleccionada.id_produccion }}
+      </h2>
+
+      <button
+        type="button"
+        aria-label="Cerrar"
+        (click)="produccionSeleccionada = null"
+      >
+        <app-icon name="close" />
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <p class="mb-3 text-sm">
+        Pedido #{{ produccionSeleccionada.id_pedido }} · Estado:
+
+        <strong> {{ produccionSeleccionada.estado }} </strong>
+      </p>
+
+      @for ( detalle of produccionSeleccionada.detalles || []; track
+      detalle.id_detalle_produccion ) {
+
+      <div class="flex justify-between py-3 gap-3 border-b border-zinc-100">
+        <span> {{ detalle.nombre_producto }} </span>
+
+        <strong> {{ detalle.cantidad_preparada }} pza </strong>
+      </div>
+
+      } @empty {
+
+      <p class="text-sm text-zinc-500">No se encontraron detalles.</p>
+
+      }
+    </div>
+  </div>
+</div>
+
+}

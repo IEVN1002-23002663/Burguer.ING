@@ -1,7 +1,884 @@
-<!-- Pantalla lista para que otro integrante desarrolle este módulo. -->
+
+<!-- ====================================== -->
+<!-- ENCABEZADO -->
+<!-- ====================================== -->
+
 <section class="page-header">
+
   <div>
-    <h1 class="page-title">Gastos y finanzas</h1>
+
+    <h1 class="page-title">
+      Gastos y finanzas
+    </h1>
+
+    <p class="page-subtitle">
+      Control de gastos operativos e indicadores
+      de Burguer.ING.
+    </p>
+
   </div>
+
+  <button
+    type="button"
+    class="btn btn-red"
+    (click)="crear()">
+
+    <app-icon name="plus" [size]="16" />
+
+    Registrar gasto
+
+  </button>
+
 </section>
-<div class="panel" style="min-height: 65vh;"></div>
+
+<!-- ====================================== -->
+<!-- MENSAJES -->
+<!-- ====================================== -->
+
+@if (mensaje) {
+
+  <div class="notice notice-ok mb-4">
+    {{ mensaje }}
+  </div>
+
+}
+
+@if (error) {
+
+  <div class="notice notice-error mb-4">
+    {{ error }}
+  </div>
+
+}
+
+<!-- ====================================== -->
+<!-- FILTROS POR FECHA -->
+<!-- ====================================== -->
+
+<section class="panel p-4 mb-5">
+
+  <div class="flex flex-wrap items-end gap-3">
+
+    <div class="form-field min-w-[150px]">
+
+      <label for="fechaInicio">
+        Desde
+      </label>
+
+      <input
+        id="fechaInicio"
+        class="form-control"
+        type="date"
+        [(ngModel)]="inicio"
+      />
+
+    </div>
+
+    <div class="form-field min-w-[150px]">
+
+      <label for="fechaFin">
+        Hasta
+      </label>
+
+      <input
+        id="fechaFin"
+        class="form-control"
+        type="date"
+        [(ngModel)]="fin"
+      />
+
+    </div>
+
+    <button
+      type="button"
+      class="btn btn-dark"
+      [disabled]="cargando"
+      (click)="cargar()">
+
+      <app-icon name="filter" [size]="16" />
+
+      {{
+        cargando
+          ? 'Consultando...'
+          : 'Aplicar periodo'
+      }}
+
+    </button>
+
+    <button
+      type="button"
+      class="btn btn-outline"
+      [disabled]="cargando"
+      (click)="limpiarFiltros()">
+
+      Limpiar filtros
+
+    </button>
+
+  </div>
+
+  <p class="text-xs text-zinc-500 mt-3">
+
+    Sin fechas se muestran todos los registros.
+    El periodo incluye ambas fechas.
+
+  </p>
+
+</section>
+
+<!-- ====================================== -->
+<!-- INDICADORES FINANCIEROS -->
+<!-- ====================================== -->
+
+<section
+  class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+
+  <!-- VENTAS -->
+
+  <div class="panel p-5">
+
+    <p class="kpi-label">
+      Ventas registradas
+    </p>
+
+    <p class="kpi-number metric-green">
+
+      {{
+        (resumen?.ventas?.monto || 0)
+          | currency:'MXN':'symbol':'1.2-2'
+      }}
+
+    </p>
+
+    <p class="kpi-caption">
+
+      {{ resumen?.ventas?.cantidad || 0 }}
+      ventas
+
+    </p>
+
+  </div>
+
+  <!-- COMPRAS -->
+
+  <div class="panel p-5">
+
+    <p class="kpi-label">
+      Compras recibidas
+    </p>
+
+    <p class="kpi-number">
+
+      {{
+        (resumen?.compras_recibidas?.monto || 0)
+          | currency:'MXN':'symbol':'1.2-2'
+      }}
+
+    </p>
+
+    <p class="kpi-caption">
+
+      {{ resumen?.compras_recibidas?.cantidad || 0 }}
+      compras
+
+    </p>
+
+  </div>
+
+  <!-- GASTOS -->
+
+  <div class="panel p-5">
+
+    <p class="kpi-label">
+      Gastos operativos
+    </p>
+
+    <p class="kpi-number metric-red">
+
+      {{
+        (resumen?.gastos?.monto || 0)
+          | currency:'MXN':'symbol':'1.2-2'
+      }}
+
+    </p>
+
+    <p class="kpi-caption">
+
+      {{ resumen?.gastos?.cantidad || 0 }}
+      gastos
+
+    </p>
+
+  </div>
+
+  <!-- DIFERENCIA REFERENCIAL -->
+
+  <div class="panel p-5">
+
+    <p class="kpi-label">
+      Diferencia referencial
+    </p>
+
+    <p
+      class="kpi-number"
+      [class.metric-red]="
+        (resumen?.diferencia_referencial || 0) < 0
+      ">
+
+      {{
+        (resumen?.diferencia_referencial || 0)
+          | currency:'MXN':'symbol':'1.2-2'
+      }}
+
+    </p>
+
+    <p class="kpi-caption">
+      No equivale a utilidad neta
+    </p>
+
+  </div>
+
+</section>
+
+<!-- ====================================== -->
+<!-- ACLARACIÓN FINANCIERA -->
+<!-- ====================================== -->
+
+@if (resumen) {
+
+  <div
+    class="rounded-xl bg-zinc-100 border border-zinc-200 text-zinc-600 text-xs p-4 mb-5">
+
+    {{ resumen.nota }}
+
+  </div>
+
+}
+
+<!-- ====================================== -->
+<!-- REPORTES -->
+<!-- ====================================== -->
+
+<section
+  class="grid grid-cols-1 xl:grid-cols-2 gap-5 mb-6">
+
+  <!-- VENTAS POR DÍA -->
+
+  <div class="panel p-5">
+
+    <div
+      class="flex items-start justify-between gap-3 mb-4">
+
+      <div>
+
+        <h2 class="panel-title">
+          Ventas por día
+        </h2>
+
+        <p class="text-xs text-zinc-500 mt-1">
+          Importe de ventas por fecha
+        </p>
+
+      </div>
+
+      <app-icon name="chart" [size]="20" />
+
+    </div>
+
+    @if (ventasDiarias.length) {
+
+      <div class="overflow-x-auto pb-2">
+
+        <div
+          class="flex items-end gap-3 h-56 min-w-max border-b border-zinc-200 px-2 pt-5">
+
+          @for (
+            dia of ventasDiarias;
+            track dia.fecha
+          ) {
+
+            <div
+              class="w-20 h-full flex flex-col items-center justify-end gap-2">
+
+              <span
+                class="text-[11px] font-semibold text-zinc-800">
+
+                {{
+                  dia.total
+                    | currency:'MXN':'symbol':'1.0-0'
+                }}
+
+              </span>
+
+              <div
+                class="bg-[#e5232a] rounded-t-lg w-11"
+                [style.height.%]="alturaBarra(dia.total)"
+                [title]="
+                  dia.cantidad_ventas + ' ventas'
+                ">
+              </div>
+
+              <span class="text-[11px] text-zinc-500">
+
+                {{ dia.fecha | date:'dd/MM' }}
+
+              </span>
+
+            </div>
+
+          }
+
+        </div>
+
+      </div>
+
+    } @else {
+
+      <div class="empty-state">
+        No hay ventas en el periodo seleccionado.
+      </div>
+
+    }
+
+  </div>
+
+  <!-- ====================================== -->
+  <!-- GASTOS POR CATEGORÍA -->
+  <!-- ====================================== -->
+
+  <div class="panel p-5">
+
+    <div
+      class="flex items-start justify-between gap-3 mb-4">
+
+      <div>
+
+        <h2 class="panel-title">
+          Gastos por categoría
+        </h2>
+
+        <p class="text-xs text-zinc-500 mt-1">
+          Distribución de gastos registrados
+        </p>
+
+      </div>
+
+      <app-icon name="money" [size]="20" />
+
+    </div>
+
+    @for (
+      categoria of gastosCategorias;
+      track categoria.categoria
+    ) {
+
+      <div
+        class="flex items-center justify-between gap-4 py-3 border-b border-zinc-100 text-sm">
+
+        <div>
+
+          <strong>
+            {{ categoria.categoria }}
+          </strong>
+
+          <span class="text-xs text-zinc-500 ml-2">
+
+            {{ categoria.cantidad_gastos }}
+            registro(s)
+
+          </span>
+
+        </div>
+
+        <span class="font-extrabold">
+
+          {{
+            categoria.total
+              | currency:'MXN':'symbol':'1.2-2'
+          }}
+
+        </span>
+
+      </div>
+
+    } @empty {
+
+      <div class="empty-state">
+        Todavía no hay gastos en este periodo.
+      </div>
+
+    }
+
+    <!-- INVENTARIO ACTUAL -->
+
+    <div
+      class="rounded-xl bg-zinc-50 text-xs text-zinc-600 p-3 mt-4">
+
+      Valor estimado del inventario actual:
+
+      <strong>
+
+        {{
+          (resumen?.inventario?.valor_estimado || 0)
+            | currency:'MXN':'symbol':'1.2-2'
+        }}
+
+      </strong>
+
+      <p class="mt-1">
+
+        Materias primas en nivel bajo:
+
+        {{
+          resumen?.inventario?.materias_primas_stock_bajo || 0
+        }}
+
+      </p>
+
+    </div>
+
+  </div>
+
+</section>
+
+<!-- ====================================== -->
+<!-- BUSCADOR E HISTORIAL -->
+<!-- ====================================== -->
+
+<section class="panel p-4 mb-4">
+
+  <div
+    class="flex flex-wrap items-center justify-between gap-3">
+
+    <div>
+
+      <h2 class="panel-title">
+        Registro de gastos
+      </h2>
+
+      <p class="text-xs text-zinc-500 mt-1">
+
+        {{ gastosFiltrados.length }}
+        registros ·
+
+        {{
+          totalGastosVisibles
+            | currency:'MXN':'symbol':'1.2-2'
+        }}
+
+        mostrados
+
+      </p>
+
+    </div>
+
+    <input
+      type="search"
+      aria-label="Buscar gastos"
+      class="form-control max-w-sm"
+      placeholder="Buscar por concepto, categoría o responsable..."
+      [(ngModel)]="busqueda"
+    />
+
+  </div>
+
+</section>
+
+<!-- ====================================== -->
+<!-- TABLA DE GASTOS -->
+<!-- ====================================== -->
+
+<div class="panel data-table-wrap">
+
+  <table class="data-table">
+
+    <thead>
+
+      <tr>
+        <th>Folio</th>
+        <th>Fecha</th>
+        <th>Concepto</th>
+        <th>Categoría</th>
+        <th>Responsable</th>
+        <th>Monto</th>
+        <th>Acciones</th>
+      </tr>
+
+    </thead>
+
+    <tbody>
+
+      @for (
+        gasto of gastosFiltrados;
+        track gasto.id_gasto
+      ) {
+
+        <tr>
+
+          <td class="font-bold">
+
+            GAS-{{ gasto.id_gasto }}
+
+          </td>
+
+          <td>
+
+            {{ gasto.fecha_gasto }}
+
+          </td>
+
+          <td>
+
+            <span class="font-semibold">
+
+              {{ gasto.concepto }}
+
+            </span>
+
+            @if (gasto.descripcion) {
+
+              <p class="text-xs text-zinc-500 mt-1">
+
+                {{ gasto.descripcion }}
+
+              </p>
+
+            }
+
+          </td>
+
+          <td>
+
+            <span class="chip chip-gray">
+
+              {{ gasto.categoria }}
+
+            </span>
+
+          </td>
+
+          <td>
+
+            {{
+              gasto.usuario ||
+              ('Usuario #' + gasto.id_usuario)
+            }}
+
+          </td>
+
+          <td class="font-extrabold">
+
+            {{
+              gasto.monto
+                | currency:'MXN':'symbol':'1.2-2'
+            }}
+
+          </td>
+
+          <td>
+
+            <div class="actions-inline">
+
+              <!-- EDITAR -->
+
+              <button
+                type="button"
+                class="btn-link-red"
+                (click)="editar(gasto)">
+
+                Editar
+
+              </button>
+
+              <!-- ELIMINAR -->
+
+              <button
+                type="button"
+                class="text-zinc-500 hover:text-red-600"
+                [disabled]="eliminandoId !== null"
+                (click)="eliminar(gasto)">
+
+                {{
+                  eliminandoId === gasto.id_gasto
+                    ? 'Eliminando...'
+                    : 'Eliminar'
+                }}
+
+              </button>
+
+            </div>
+
+          </td>
+
+        </tr>
+
+      } @empty {
+
+        <tr>
+
+          <td colspan="7" class="empty-state">
+
+            {{
+              cargando
+                ? 'Cargando gastos...'
+                : 'No hay gastos registrados para estos filtros.'
+            }}
+
+          </td>
+
+        </tr>
+
+      }
+
+    </tbody>
+
+  </table>
+
+</div>
+
+<!-- ====================================== -->
+<!-- MODAL: REGISTRAR O EDITAR GASTO -->
+<!-- ====================================== -->
+
+@if (modal) {
+
+  <div
+    class="modal-backdrop"
+    (click)="cerrarModal()">
+
+    <div
+      class="modal-panel"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="tituloModalGasto"
+      (click)="$event.stopPropagation()">
+
+      <!-- ENCABEZADO DEL MODAL -->
+
+      <div class="modal-header">
+
+        <h2
+          id="tituloModalGasto"
+          class="panel-title">
+
+          {{
+            editandoId === null
+              ? 'Registrar gasto'
+              : 'Editar gasto'
+          }}
+
+        </h2>
+
+        <button
+          type="button"
+          aria-label="Cerrar"
+          [disabled]="guardando"
+          (click)="cerrarModal()">
+
+          <app-icon
+            name="close"
+            [size]="18"
+          />
+
+        </button>
+
+      </div>
+
+      <!-- FORMULARIO -->
+
+      <form (ngSubmit)="guardar()">
+
+        <div class="modal-body space-y-4">
+
+          @if (errorModal) {
+
+            <div class="notice notice-error">
+
+              {{ errorModal }}
+
+            </div>
+
+          }
+
+          <!-- CONCEPTO Y CATEGORÍA -->
+
+          <div class="form-grid">
+
+            <div class="form-field">
+
+              <label for="conceptoGasto">
+                Concepto *
+              </label>
+
+              <input
+                id="conceptoGasto"
+                name="concepto"
+                class="form-control"
+                [(ngModel)]="form.concepto"
+                maxlength="150"
+                required
+                placeholder="Ej. Pago de electricidad"
+              />
+
+            </div>
+
+            <div class="form-field">
+
+              <label for="categoriaGasto">
+                Categoría *
+              </label>
+
+              <select
+                id="categoriaGasto"
+                name="categoria"
+                class="form-control"
+                [(ngModel)]="form.categoria"
+                required>
+
+                @for (
+                  categoria of categoriasFormulario;
+                  track categoria
+                ) {
+
+                  <option [value]="categoria">
+
+                    {{ categoria }}
+
+                  </option>
+
+                }
+
+              </select>
+
+            </div>
+
+          </div>
+
+          <!-- MONTO Y FECHA -->
+
+          <div class="form-grid">
+
+            <div class="form-field">
+
+              <label for="montoGasto">
+                Monto en pesos (MXN) *
+              </label>
+
+              <input
+                id="montoGasto"
+                name="monto"
+                class="form-control"
+                type="number"
+                min="0.01"
+                step="0.01"
+                required
+                [(ngModel)]="form.monto"
+                placeholder="Ej. 350.00"
+              />
+
+            </div>
+
+            <div class="form-field">
+
+              <label for="fechaGasto">
+                Fecha del gasto *
+              </label>
+
+              <input
+                id="fechaGasto"
+                name="fecha_gasto"
+                class="form-control"
+                type="date"
+                required
+                [(ngModel)]="form.fecha_gasto"
+              />
+
+            </div>
+
+          </div>
+
+          <!-- USUARIO RESPONSABLE -->
+
+          <div class="form-field">
+
+            <label>
+              Responsable
+            </label>
+
+            <div
+              class="form-control bg-zinc-50 flex items-center">
+
+              Usuario #{{ form.id_usuario || 'Sin sesión' }}
+
+            </div>
+
+            <p class="text-xs text-zinc-500">
+
+              Al crear un gasto se utiliza el usuario
+              con sesión iniciada.
+
+            </p>
+
+          </div>
+
+          <!-- DESCRIPCIÓN -->
+
+          <div class="form-field">
+
+            <label for="descripcionGasto">
+              Descripción (opcional)
+            </label>
+
+            <textarea
+              id="descripcionGasto"
+              name="descripcion"
+              class="form-control"
+              rows="3"
+              [(ngModel)]="form.descripcion"
+              placeholder="Observaciones sobre el gasto...">
+            </textarea>
+
+          </div>
+
+        </div>
+
+        <!-- BOTONES -->
+
+        <div class="modal-footer">
+
+          <button
+            type="button"
+            class="btn btn-outline"
+            [disabled]="guardando"
+            (click)="cerrarModal()">
+
+            Cancelar
+
+          </button>
+
+          <button
+            type="submit"
+            class="btn btn-red"
+            [disabled]="guardando">
+
+            {{
+              guardando
+                ? 'Guardando...'
+                : (
+                    editandoId === null
+                      ? 'Registrar gasto'
+                      : 'Guardar cambios'
+                  )
+            }}
+
+          </button>
+
+        </div>
+
+      </form>
+
+    </div>
+
+  </div>
+
+}
