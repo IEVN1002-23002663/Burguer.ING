@@ -1,0 +1,89 @@
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Dashboard Ejecutivo — Burguer.ING</h1>
+      <p class="page-subtitle">Resumen integral de operaciones, inventario y rentabilidad en León, Guanajuato.</p>
+    </div>
+    <div class="flex gap-2 flex-wrap">
+      <button class="btn btn-dark" (click)="cargar()"><app-icon name="refresh" [size]="15" /> Actualizar datos</button>
+      <a routerLink="/compras" class="btn btn-red"><app-icon name="cart" [size]="16" /> Ver Compras</a>
+    </div>
+  </div>
+  @if (error) { <div class="notice notice-error mb-5">{{error}}</div> }
+  @if (cargando) { <div class="loading-line">Consultando datos reales de Flask...</div> }
+  <div class="kpi-grid mb-6">
+    <section class="panel kpi">
+      <div class="flex justify-between items-start"><div class="kpi-label">Ingresos totales</div><div class="kpi-icon bg-emerald-100 text-emerald-700"><app-icon name="money" [size]="19" /></div></div>
+      <div class="kpi-number">{{ moneda(resumen?.ventas?.monto || 0) }}</div>
+      <div class="kpi-caption metric-green">{{resumen?.ventas?.cantidad || 0}} ventas registradas</div>
+    </section>
+    <section class="panel kpi">
+      <div class="flex justify-between items-start"><div class="kpi-label">Diferencia referencial</div><div class="kpi-icon bg-red-100 text-red-600"><app-icon name="chart" [size]="19" /></div></div>
+      <div class="kpi-number" [class.metric-red]="(resumen?.diferencia_referencial || 0)<0">{{ moneda(resumen?.diferencia_referencial || 0) }}</div>
+      <div class="kpi-caption">Ventas − compras − gastos · No es utilidad neta</div>
+    </section>
+    <section class="panel kpi">
+      <div class="flex justify-between items-start"><div class="kpi-label">Compras pendientes</div><div class="kpi-icon bg-blue-100 text-blue-700"><app-icon name="cart" [size]="19" /></div></div>
+      <div class="kpi-number">{{comprasPendientes}}</div><div class="kpi-caption">Pendientes de recibir en almacén</div>
+    </section>
+    <section class="panel kpi border-amber-300">
+      <div class="flex justify-between items-start"><div class="kpi-label text-amber-800">Alertas inventario</div><div class="kpi-icon bg-amber-500 text-white"><app-icon name="warning" [size]="19" /></div></div>
+      <div class="kpi-number metric-orange">{{resumen?.inventario?.materias_primas_stock_bajo || 0}} <span class="text-base font-normal">insumos</span></div><div class="kpi-caption metric-orange">Stock mínimo alcanzado</div>
+    </section>
+  </div>
+  <div class="grid grid-cols-1 xl:grid-cols-[1.4fr_1fr] gap-6 mb-6">
+    <section class="panel p-5">
+      <div class="flex justify-between gap-3 items-start mb-6">
+        <div><div class="panel-title">Ventas por día (MXN)</div><div class="text-xs text-zinc-500 mt-1">Ingresos registrados en el sistema</div></div>
+        <span class="chip chip-gray">Datos reales</span>
+      </div>
+      @if (ventasDias.length) {
+        <div class="h-[260px] flex gap-3 items-end border-b border-zinc-200 px-2 pb-1">
+          @for (dia of ventasDias; track dia.fecha) {
+            <div class="flex flex-1 flex-col h-full items-center justify-end min-w-0 gap-2" [title]="dia.fecha+' · '+moneda(dia.total)">
+              <span class="text-[10px] text-zinc-600 font-bold">{{monedaCorta(dia.total)}}</span>
+              <div class="w-[70%] max-w-[90px] rounded-t-lg bg-[#e5232a] min-h-[4px]" [style.height.%]="altoBarra(dia.total)"></div>
+            </div>
+          }
+        </div>
+        <div class="flex gap-3 px-2 pt-2 text-[10px] text-zinc-500">
+          @for (dia of ventasDias; track dia.fecha) { <div class="flex-1 min-w-0 text-center truncate">{{dia.fecha.slice(5)}}</div> }
+        </div>
+      } @else { <div class="empty-state">Todavía no hay ventas registradas para graficar.</div> }
+    </section>
+    <section class="panel p-5">
+      <div class="panel-title">Productos por categoría</div>
+      <div class="text-xs text-zinc-500 mt-1 mb-6">Distribución del catálogo (no representa ventas)</div>
+      @if (categorias.length) {
+        <div class="w-[230px] h-[230px] mx-auto rounded-full relative" [style.background]="gradienteDonut">
+          <div class="absolute inset-[48px] rounded-full bg-white flex items-center justify-center flex-col"><div class="text-3xl font-extrabold">{{totalProductos}}</div><div class="text-xs text-zinc-500">productos</div></div>
+        </div>
+        <div class="flex flex-wrap justify-center gap-3 mt-6">
+          @for (cat of categorias; track cat.nombre) {
+            <span class="text-[11px] text-zinc-500 flex items-center gap-2"><span class="w-3 h-3 rounded-sm" [style.background]="cat.color"></span>{{cat.nombre}} ({{cat.cantidad}})</span>
+          }
+        </div>
+      } @else { <div class="empty-state">Sin productos disponibles para esta gráfica.</div> }
+    </section>
+  </div>
+  <div class="grid grid-cols-1 xl:grid-cols-[1.4fr_1fr] gap-6">
+    <section class="panel overflow-hidden">
+      <div class="p-5 border-b border-zinc-100 flex items-center justify-between"><div class="panel-title">Compras recientes</div><a routerLink="/compras" class="btn-link-red text-xs">Gestionar todas</a></div>
+      <div class="data-table-wrap">
+        <table class="data-table"><thead><tr><th>Compra</th><th>Proveedor</th><th>Total</th><th>Estado</th></tr></thead>
+          <tbody>
+            @for (compra of recientes; track compra.id_compra) {
+              <tr><td class="font-bold">CMP-{{compra.id_compra}}</td><td>{{compra.proveedor}}</td><td class="font-bold">{{moneda(compra.total)}}</td><td><span class="chip" [class.chip-yellow]="compra.estado==='Pendiente'" [class.chip-green]="compra.estado==='Recibida'" [class.chip-gray]="compra.estado==='Cancelada'">{{compra.estado}}</span></td></tr>
+            } @empty { <tr><td colspan="4" class="text-center text-zinc-400">Sin compras registradas</td></tr> }
+          </tbody>
+        </table>
+      </div>
+    </section>
+    <section class="panel p-5">
+      <div class="panel-title mb-4">Materias primas por reabastecer</div>
+      @for (materia of bajas; track materia.id_materia_prima) {
+        <div class="alert-banner mb-2"><strong>{{materia.nombre}}</strong><div class="mt-1">Disponible: {{materia.stock_actual}} {{materia.unidad_medida}} · Mínimo: {{materia.stock_minimo}}</div></div>
+      } @empty { <div class="empty-state">No hay alertas de inventario.</div> }
+      <div class="border-t border-zinc-100 mt-4 pt-3 text-xs text-zinc-500 flex justify-between"><span>Usuarios registrados</span><strong>{{totalUsuarios}}</strong></div>
+      <a routerLink="/inventario" class="btn btn-outline w-full mt-4">Ver inventario <app-icon name="arrow" [size]="16" /></a>
+    </section>
+  </div>

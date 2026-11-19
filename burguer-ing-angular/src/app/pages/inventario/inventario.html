@@ -1,0 +1,60 @@
+  <div class="page-header">
+    <div><h1 class="page-title">Control de Inventario y Kardex</h1><p class="page-subtitle">Existencias actualizadas, alertas de reabastecimiento y trazabilidad de entradas/salidas.</p></div>
+    <button class="btn btn-dark" (click)="abrirModal()"><app-icon name="filter" [size]="16" /> Registrar Ajuste de Inventario</button>
+  </div>
+  @if (mensaje) { <div class="notice notice-ok mb-4">{{mensaje}}</div> }
+  @if (error) { <div class="notice notice-error mb-4">{{error}}</div> }
+  <div class="kpi-grid mb-6">
+    <div class="panel kpi"><div class="text-xs font-bold text-zinc-500">Valor Estimado del Inventario</div><div class="kpi-number">{{moneda(valorInventario)}}</div><div class="kpi-caption metric-green">Costo valuado al precio registrado</div></div>
+    <div class="panel kpi"><div class="text-xs font-bold text-zinc-500">Insumos Registrados</div><div class="kpi-number">{{materias.length}}</div><div class="kpi-caption">Control de existencias</div></div>
+    <div class="panel kpi border-amber-300"><div class="text-xs font-bold metric-orange">Alertas Stock Mínimo</div><div class="kpi-number metric-orange">{{totalAlertas}}</div><div class="kpi-caption metric-orange">Requieren orden de compra</div></div>
+    <div class="panel kpi border-red-200"><div class="text-xs font-bold metric-red">Materias Primas Agotadas</div><div class="kpi-number metric-red">{{agotados}}</div><div class="kpi-caption metric-red">Existencia en 0</div></div>
+  </div>
+  <div class="grid grid-cols-1 xl:grid-cols-[1.4fr_1fr] gap-6">
+    <section class="panel overflow-hidden">
+      <div class="p-5 flex justify-between items-center border-b border-zinc-100 gap-3"><div class="panel-title">Existencias por Ingrediente</div><span class="text-xs text-zinc-400">{{cargando?'Actualizando...':'Datos de MySQL'}}</span></div>
+      <div class="p-4"><input class="form-control" [(ngModel)]="busqueda" placeholder="Buscar materia prima..." /></div>
+      <div class="data-table-wrap max-h-[570px] overflow-y-auto">
+        <table class="data-table"><thead><tr><th>Ingrediente</th><th>Stock actual</th><th>Mínimo</th><th>Valor</th><th>Estado</th></tr></thead>
+          <tbody>
+            @for (m of materiasFiltradas; track m.id_materia_prima) {
+              <tr><td class="font-bold min-w-[160px]">{{m.nombre}}</td>
+              <td class="font-bold" [class.metric-green]="m.stock_actual>m.stock_minimo" [class.metric-orange]="m.stock_actual<=m.stock_minimo">{{cantidad(m.stock_actual,m.unidad_medida)}}</td>
+              <td class="text-zinc-500">{{cantidad(m.stock_minimo,m.unidad_medida)}}</td>
+              <td>{{moneda(m.stock_actual*m.costo_unitario)}}</td>
+              <td><span class="chip" [class.chip-red]="m.stock_actual<=0" [class.chip-yellow]="m.stock_actual>0&&m.stock_actual<=m.stock_minimo" [class.chip-green]="m.stock_actual>m.stock_minimo">{{m.stock_actual<=0?'Agotado':m.stock_actual<=m.stock_minimo?'Stock bajo':'Óptimo'}}</span></td></tr>
+            } @empty { <tr><td colspan="5" class="empty-state">Sin materias primas.</td></tr> }
+          </tbody>
+        </table>
+      </div>
+    </section>
+    <section class="panel overflow-hidden">
+      <div class="p-5 flex justify-between border-b border-zinc-100"><span class="panel-title">Historial de Movimientos</span><span class="text-[#e5232a] text-xs font-semibold">Kardex</span></div>
+      <div class="p-4 max-h-[700px] overflow-y-auto space-y-3">
+        @for (mov of movimientos;track mov.id_movimiento) {
+          <div class="border border-zinc-100 rounded-xl p-4 bg-zinc-50">
+            <div class="flex justify-between gap-3"><div><div class="text-xs font-bold" [class.text-emerald-700]="esEntrada(mov)" [class.text-red-600]="!esEntrada(mov)">{{etiquetaMovimiento(mov.tipo_movimiento)}}</div><div class="font-extrabold text-sm mt-1">{{mov.materia_prima}}</div></div>
+              <span class="chip h-fit" [class.chip-green]="esEntrada(mov)" [class.chip-red]="!esEntrada(mov)">{{esEntrada(mov)?'+':'−'}}{{cantidad(mov.cantidad,mov.unidad_medida||'')}}</span></div>
+            <div class="text-[11px] mt-2 text-zinc-500">{{mov.motivo||'Sin motivo'}} · {{mov.fecha_movimiento}}</div>
+          </div>
+        } @empty { <div class="empty-state">{{cargandoMovimientos?'Cargando historial...':'Todavía no hay movimientos registrados.'}}</div> }
+      </div>
+    </section>
+  </div>
+  @if (modalAbierto) {
+    <div class="modal-backdrop" (click)="modalAbierto=false"><div class="modal-panel" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <div class="modal-header"><h2 class="panel-title">Registrar movimiento de inventario</h2><button (click)="modalAbierto=false" aria-label="Cerrar"><app-icon name="close" [size]="19" /></button></div>
+      <form (ngSubmit)="guardarMovimiento()"><div class="modal-body space-y-4">
+        @if (errorModal) { <div class="notice notice-error">{{errorModal}}</div> }
+        <div class="form-field"><label>Tipo de movimiento *</label><select class="form-control" name="tipo" [(ngModel)]="tipoMovimiento"><option value="AjusteEntrada">Ajuste de entrada (+)</option><option value="AjusteSalida">Ajuste de salida (−)</option><option value="Merma">Merma (−)</option></select></div>
+        <div class="form-field"><label>Materia prima *</label><select class="form-control" name="materia" [(ngModel)]="idMateria" required>
+          <option [ngValue]="0">Selecciona materia prima</option>
+          @for (m of materiasActivas;track m.id_materia_prima){<option [ngValue]="m.id_materia_prima">{{m.nombre}} — {{m.stock_actual}} {{m.unidad_medida}}</option>}
+        </select></div>
+        <div class="form-field"><label>Cantidad ({{unidadSeleccionada}}) *</label><input class="form-control" name="cantidad" [(ngModel)]="cantidadMovimiento" type="number" step="0.001" min="0.001" required /></div>
+        <div class="form-field"><label>Motivo *</label><textarea class="form-control" name="motivo" [(ngModel)]="motivo" rows="2" required placeholder="Ej. Conteo físico / Producto dañado"></textarea></div>
+        <div class="alert-banner">Los movimientos actualizan el stock inmediatamente. No uses ajustes para registrar una compra: esa operación se hace desde Compras.</div>
+      </div>
+      <div class="modal-footer"><button class="btn btn-outline" type="button" (click)="modalAbierto=false">Cancelar</button><button class="btn btn-red" type="submit" [disabled]="guardando">{{guardando?'Guardando...':'Registrar movimiento'}}</button></div></form>
+    </div></div>
+  }

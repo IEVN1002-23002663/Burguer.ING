@@ -1,0 +1,19 @@
+AGREGAR A TU BACKEND EXISTENTE (sin reemplazar app.py)
+
+1) En CMD, con el entorno Python de Flask activado:
+   pip install Flask-Cors
+
+2) En src/app.py, junto a las importaciones:
+   from flask_cors import CORS
+
+3) Dentro de create_app(), justo después de app = Flask(__name__):
+   CORS(app, resources={
+       r"/api/*": {"origins": ["http://127.0.0.1:4200", "http://localhost:4200"]}
+   })
+
+4) Mantén config, mysql.init_app(app), las rutas y los Blueprints.
+5) Agrega Flask-Cors al requirements.txt de Python.
+6) Reinicia Flask (python app.py desde flask/src).
+
+Angular consumirá Flask en http://127.0.0.1:5000/api.
+Si cambias el puerto o host, edita src/app/core/services/api.service.ts.

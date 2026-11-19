@@ -1,0 +1,56 @@
+  <div class="page-header">
+    <div><h1 class="page-title">Usuarios y Roles</h1><p class="page-subtitle">Administración de accesos para administradores, personal y clientes.</p></div>
+    <button class="btn btn-red" (click)="abrirCrear()"><app-icon name="plus" [size]="17" /> Agregar Usuario</button>
+  </div>
+  @if (mensaje) { <div class="notice notice-ok mb-4">{{mensaje}}</div> }
+  @if (error) { <div class="notice notice-error mb-4">{{error}}</div> }
+  <div class="panel p-4 mb-6 flex flex-wrap justify-between items-center gap-4">
+    <div class="relative w-full max-w-[350px]">
+      <app-icon name="search" [size]="16" class="absolute left-3 top-3 text-zinc-400" />
+      <input class="search-input" [(ngModel)]="filtro" placeholder="Buscar por nombre o correo..." aria-label="Buscar usuarios" />
+    </div>
+    <div class="filter-row">
+      @for (rol of filtrosRoles; track rol) {
+        <button type="button" class="filter-pill" [class.selected]="rolSeleccionado===rol" (click)="rolSeleccionado=rol">{{rol}}</button>
+      }
+    </div>
+  </div>
+  <div class="panel data-table-wrap">
+    <table class="data-table">
+      <thead><tr><th>Usuario</th><th>Correo electrónico</th><th>Rol</th><th>Estado</th><th>Registro</th><th class="text-right">Acciones</th></tr></thead>
+      <tbody>
+        @for (u of usuariosFiltrados; track u.id_usuario) {
+          <tr>
+            <td class="font-bold text-zinc-900">{{u.nombre}}</td><td>{{u.correo}}</td>
+            <td><span class="chip" [class.chip-red]="u.rol==='Administrador'" [class.chip-yellow]="u.rol==='Empleado'" [class.chip-blue]="u.rol==='Cliente'">{{u.rol}}</span></td>
+            <td><span class="chip" [class.chip-green]="u.estado===1" [class.chip-gray]="u.estado===0">{{u.estado===1?'Activo':'Inactivo'}}</span></td>
+            <td class="text-zinc-500">{{u.fecha_registro?.slice(0,10)}}</td>
+            <td><div class="actions-inline">
+              <button class="table-action" (click)="abrirEditar(u)" title="Editar usuario" aria-label="Editar usuario"><app-icon name="edit" [size]="17" /></button>
+              <button class="table-action" (click)="cambiarEstado(u)" [title]="u.estado===1?'Desactivar':'Activar'" [attr.aria-label]="u.estado===1?'Desactivar usuario':'Activar usuario'"><app-icon [name]="u.estado===1?'close':'check'" [size]="17" /></button>
+            </div></td>
+          </tr>
+        } @empty { <tr><td colspan="6" class="text-center text-zinc-400 p-10">{{cargando?'Cargando usuarios...':'No se encontraron usuarios.'}}</td></tr> }
+      </tbody>
+    </table>
+  </div>
+  @if (modalAbierto) {
+    <div class="modal-backdrop" (click)="cerrarModal()">
+      <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="usuario-title" (click)="$event.stopPropagation()">
+        <div class="modal-header"><h2 id="usuario-title" class="panel-title">{{editandoId?'Editar usuario':'Agregar usuario'}}</h2><button (click)="cerrarModal()" aria-label="Cerrar"><app-icon name="close" [size]="19" /></button></div>
+        <form (ngSubmit)="guardar()">
+          <div class="modal-body space-y-4">
+            @if (errorModal) { <div class="notice notice-error">{{errorModal}}</div> }
+            <div class="form-field"><label>Nombre completo *</label><input class="form-control" [(ngModel)]="form.nombre" name="nombre" maxlength="100" required /></div>
+            <div class="form-field"><label>Correo electrónico *</label><input class="form-control" type="email" [(ngModel)]="form.correo" name="correo" maxlength="120" required /></div>
+            <div class="form-field"><label>Rol *</label><select class="form-control" [(ngModel)]="form.id_rol" name="id_rol" required>
+              <option [ngValue]="1">Administrador</option><option [ngValue]="2">Empleado</option><option [ngValue]="3">Cliente</option>
+            </select></div>
+            @if (form.id_rol===3) { <div class="alert-banner">El endpoint actual crea la cuenta de usuario. Para pedidos del cliente también será necesario un registro relacionado en la tabla <code>clientes</code>.</div> }
+            <div class="form-field"><label>Contraseña {{editandoId?'(dejar vacía para conservarla)':'*'}}</label><input class="form-control" type="password" [(ngModel)]="form.password" name="password" [required]="!editandoId" minlength="8" /></div>
+          </div>
+          <div class="modal-footer"><button type="button" class="btn btn-outline" (click)="cerrarModal()">Cancelar</button><button class="btn btn-red" type="submit" [disabled]="guardando">{{guardando?'Guardando...':'Guardar usuario'}}</button></div>
+        </form>
+      </div>
+    </div>
+  }

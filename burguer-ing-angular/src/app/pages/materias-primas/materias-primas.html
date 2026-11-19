@@ -1,0 +1,54 @@
+  <div class="page-header">
+    <div><h1 class="page-title">Catálogo de Materias Primas</h1><p class="page-subtitle">Insumos base, costos unitarios, unidades y parámetros de stock mínimo.</p></div>
+    <button class="btn btn-red" (click)="abrirCrear()"><app-icon name="plus" [size]="17" /> Agregar Materia Prima</button>
+  </div>
+  @if (mensaje) { <div class="notice notice-ok mb-4">{{mensaje}}</div> }
+  @if (error) { <div class="notice notice-error mb-4">{{error}}</div> }
+  <div class="panel p-4 mb-6 flex flex-wrap justify-between gap-3 items-center">
+    <div class="relative w-full max-w-[340px]"><app-icon name="search" [size]="16" class="absolute left-3 top-3 text-zinc-400" /><input class="search-input" [(ngModel)]="filtro" placeholder="Buscar ingrediente o ID..." /></div>
+    <div class="filter-row"><button class="filter-pill" [class.selected]="categoriaFiltro===0" (click)="categoriaFiltro=0">Todas</button>
+      @for (cat of categorias; track cat.id_categoria_insumo) {
+        <button class="filter-pill" [class.selected]="categoriaFiltro===cat.id_categoria_insumo" (click)="categoriaFiltro=cat.id_categoria_insumo">{{cat.nombre}}</button>
+      }
+    </div>
+  </div>
+  <div class="panel data-table-wrap">
+    <table class="data-table"><thead><tr><th>ID</th><th>Ingrediente</th><th>Categoría</th><th>Costo compra</th><th>Disponible</th><th>Stock mín.</th><th>Estado</th><th class="text-right">Acciones</th></tr></thead>
+      <tbody>
+        @for (m of materiasFiltradas; track m.id_materia_prima) {
+          <tr>
+            <td class="font-mono text-xs">MP-{{m.id_materia_prima.toString().padStart(2,'0')}}</td>
+            <td class="font-semibold text-zinc-900 min-w-[155px]">{{m.nombre}}</td>
+            <td><span class="chip chip-gray">{{m.categoria}}</span></td>
+            <td>{{moneda(m.costo_unitario)}} / {{m.unidad_medida}}</td>
+            <td [class.metric-green]="m.stock_actual>m.stock_minimo" [class.metric-orange]="m.stock_actual<=m.stock_minimo" class="font-bold">{{cantidad(m.stock_actual,m.unidad_medida)}}</td>
+            <td class="text-zinc-500">{{cantidad(m.stock_minimo,m.unidad_medida)}}</td>
+            <td><span class="chip" [class.chip-green]="m.estado===1" [class.chip-gray]="m.estado===0">{{m.estado===1?'Activo':'Inactivo'}}</span></td>
+            <td><div class="actions-inline"><button class="table-action" title="Editar" (click)="abrirEditar(m)"><app-icon name="edit" [size]="16" /></button><button class="table-action" [title]="m.estado===1?'Desactivar':'Activar'" (click)="cambiarEstado(m)"><app-icon [name]="m.estado===1?'close':'check'" [size]="16" /></button></div></td>
+          </tr>
+        } @empty { <tr><td colspan="8" class="text-center p-10 text-zinc-400">{{cargando?'Cargando materias primas...':'No se encontraron materias primas.'}}</td></tr> }
+      </tbody>
+    </table>
+  </div>
+  <p class="text-[11px] text-zinc-500 mt-4">El stock actual solo se modifica en Compras o Inventario. Los campos proveedor y caducidad de tu referencia visual no existen en el esquema MySQL actual.</p>
+  @if (modalAbierto) {
+    <div class="modal-backdrop" (click)="modalAbierto=false">
+      <div class="modal-panel" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+        <div class="modal-header"><h2 class="panel-title">{{editandoId?'Editar materia prima':'Agregar materia prima'}}</h2><button (click)="modalAbierto=false" aria-label="Cerrar"><app-icon name="close" [size]="19" /></button></div>
+        <form (ngSubmit)="guardar()"><div class="modal-body space-y-4">
+          @if (errorModal) { <div class="notice notice-error">{{errorModal}}</div> }
+          <div class="form-field"><label>Nombre de ingrediente *</label><input class="form-control" name="nombre" [(ngModel)]="form.nombre" maxlength="120" required /></div>
+          <div class="form-grid">
+            <div class="form-field"><label>Categoría *</label><select class="form-control" name="categoria" [(ngModel)]="form.id_categoria_insumo" required>
+              @for (cat of categorias;track cat.id_categoria_insumo){<option [ngValue]="cat.id_categoria_insumo">{{cat.nombre}}</option>}
+            </select></div>
+            <div class="form-field"><label>Unidad *</label><select class="form-control" name="unidad" [(ngModel)]="form.unidad_medida" required><option value="g">Gramos (g)</option><option value="ml">Mililitros (ml)</option><option value="pza">Piezas (pza)</option><option value="reb">Rebanadas (reb)</option></select></div>
+            <div class="form-field"><label>Stock mínimo *</label><input class="form-control" name="stock_minimo" [(ngModel)]="form.stock_minimo" type="number" min="0" step="0.001" required /></div>
+            <div class="form-field"><label>Costo por unidad (MXN) *</label><input class="form-control" name="costo_unitario" [(ngModel)]="form.costo_unitario" type="number" min="0" step="0.0001" required /></div>
+          </div>
+          <div class="alert-banner">El stock inicial de nuevos insumos será 0. Se aumenta mediante una compra recibida o un ajuste de entrada.</div>
+        </div>
+        <div class="modal-footer"><button class="btn btn-outline" type="button" (click)="modalAbierto=false">Cancelar</button><button class="btn btn-red" type="submit" [disabled]="guardando">{{guardando?'Guardando...':'Guardar insumo'}}</button></div></form>
+      </div>
+    </div>
+  }
