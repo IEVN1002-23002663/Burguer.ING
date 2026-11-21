@@ -1,7 +1,7 @@
 class DevelopmentConfig():
      DEBUG=True
      MYSQL_HOST='localhost'
-     MYSQL_USER='angel'
+     MYSQL_USER='Carlos'
      MYSQL_PASSWORD='root'
      MYSQL_DB='burguer_ing'
      MYSQL_CURSORCLASS = 'Cursor'

@@ -38,20 +38,23 @@ def iniciar_sesion():
         cursor = mysql.connection.cursor()
 
         sql = """
-            SELECT
-                u.id_usuario,
-                u.nombre,
-                u.correo,
-                u.password,
-                u.estado,
-                r.id_rol,
-                r.nombre
-            FROM usuarios u
-            INNER JOIN roles r
-                ON u.id_rol = r.id_rol
-            WHERE u.correo = %s
-            LIMIT 1
-        """
+    SELECT
+        u.id_usuario,
+        u.nombre,
+        u.correo,
+        u.password,
+        u.estado,
+        r.id_rol,
+        r.nombre,
+        c.id_cliente
+    FROM usuarios u
+    INNER JOIN roles r
+        ON u.id_rol = r.id_rol
+    LEFT JOIN clientes c
+        ON c.id_usuario = u.id_usuario
+    WHERE u.correo = %s
+    LIMIT 1
+"""
 
         cursor.execute(sql, (correo,))
         usuario = cursor.fetchone()
@@ -96,16 +99,17 @@ def iniciar_sesion():
         )
 
         return jsonify({
-            'mensaje': 'Inicio de sesión exitoso',
-            'token': token,
-            'usuario': {
-                'id_usuario': usuario[0],
-                'nombre': usuario[1],
-                'correo': usuario[2],
-                'id_rol': usuario[5],
-                'rol': usuario[6]
-            }
-        }), 200
+    'mensaje': 'Inicio de sesión exitoso',
+    'token': token,
+    'usuario': {
+        'id_usuario': usuario[0],
+        'nombre': usuario[1],
+        'correo': usuario[2],
+        'id_rol': usuario[5],
+        'rol': usuario[6],
+        'id_cliente': usuario[7]
+    }
+}), 200
 
     except Exception as error:
         return jsonify({

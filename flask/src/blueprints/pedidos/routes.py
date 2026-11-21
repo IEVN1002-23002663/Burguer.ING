@@ -10,10 +10,17 @@ pedidos_bp = Blueprint(
     url_prefix='/api'
 )
 
-# Por ahora la entrega tiene costo cero.
-# Cuando definamos una tarifa, se modifica aquí.
-COSTO_ENTREGA = Decimal('0.00')
 
+# ==========================================
+# CONFIGURACIÓN
+# ==========================================
+
+COSTO_ENTREGA = Decimal('50.00')
+
+
+# ==========================================
+# FUNCIONES AUXILIARES
+# ==========================================
 
 def convertir_decimal(valor):
     try:
@@ -55,7 +62,7 @@ def obtener_carrito_activo(cursor, id_cliente, bloquear=False):
 
 
 # ==========================================
-# GET: Consultar carrito de un cliente
+# CONSULTAR CARRITO
 # ==========================================
 
 @pedidos_bp.route(
@@ -63,6 +70,7 @@ def obtener_carrito_activo(cursor, id_cliente, bloquear=False):
     methods=['GET']
 )
 def obtener_carrito(id_cliente):
+
     cursor = mysql.connection.cursor()
 
     try:
@@ -77,7 +85,10 @@ def obtener_carrito(id_cliente):
                 'mensaje': 'El cliente no existe.'
             }), 404
 
-        id_carrito = obtener_carrito_activo(cursor, id_cliente)
+        id_carrito = obtener_carrito_activo(
+            cursor,
+            id_cliente
+        )
 
         if not id_carrito:
             return jsonify({
@@ -108,9 +119,13 @@ def obtener_carrito(id_cliente):
         subtotal = Decimal('0.00')
 
         for fila in cursor.fetchall():
+
             precio = Decimal(str(fila[5]))
             cantidad = int(fila[6])
-            subtotal_producto = dinero(precio * cantidad)
+
+            subtotal_producto = dinero(
+                precio * cantidad
+            )
 
             productos.append({
                 'id_detalle_carrito': fila[0],
@@ -143,7 +158,7 @@ def obtener_carrito(id_cliente):
 
 
 # ==========================================
-# POST: Agregar producto al carrito
+# AGREGAR PRODUCTO AL CARRITO
 # ==========================================
 
 @pedidos_bp.route(
@@ -151,7 +166,8 @@ def obtener_carrito(id_cliente):
     methods=['POST']
 )
 def agregar_producto_carrito(id_cliente):
-    datos = request.get_json()
+
+    datos = request.get_json(silent=True)
 
     if not datos:
         return jsonify({
@@ -182,6 +198,7 @@ def agregar_producto_carrito(id_cliente):
     cursor = mysql.connection.cursor()
 
     try:
+
         cursor.execute("""
             SELECT id_cliente
             FROM clientes
@@ -190,6 +207,7 @@ def agregar_producto_carrito(id_cliente):
 
         if not cursor.fetchone():
             mysql.connection.rollback()
+
             return jsonify({
                 'mensaje': 'El cliente no existe.'
             }), 404
@@ -205,11 +223,11 @@ def agregar_producto_carrito(id_cliente):
 
         if not producto:
             mysql.connection.rollback()
+
             return jsonify({
                 'mensaje': 'El producto no existe o no está disponible.'
             }), 404
 
-        # Buscar o crear el carrito activo.
         id_carrito = obtener_carrito_activo(
             cursor,
             id_cliente,
@@ -217,6 +235,7 @@ def agregar_producto_carrito(id_cliente):
         )
 
         if not id_carrito:
+
             cursor.execute("""
                 INSERT INTO carritos (
                     id_cliente,
@@ -228,7 +247,6 @@ def agregar_producto_carrito(id_cliente):
 
             id_carrito = cursor.lastrowid
 
-        # Revisar si el producto ya está en el carrito.
         cursor.execute("""
             SELECT id_detalle_carrito, cantidad
             FROM detalle_carrito
@@ -240,6 +258,7 @@ def agregar_producto_carrito(id_cliente):
         detalle = cursor.fetchone()
 
         if detalle:
+
             nueva_cantidad = detalle[1] + cantidad
 
             cursor.execute("""
@@ -249,6 +268,7 @@ def agregar_producto_carrito(id_cliente):
             """, (nueva_cantidad, detalle[0]))
 
         else:
+
             cursor.execute("""
                 INSERT INTO detalle_carrito (
                     id_carrito,
@@ -268,6 +288,7 @@ def agregar_producto_carrito(id_cliente):
 
     except Exception as e:
         mysql.connection.rollback()
+
         return jsonify({
             'mensaje': 'No se pudo agregar el producto.',
             'error': str(e)
@@ -278,7 +299,7 @@ def agregar_producto_carrito(id_cliente):
 
 
 # ==========================================
-# PUT: Modificar cantidad de un producto
+# ACTUALIZAR CANTIDAD DEL CARRITO
 # ==========================================
 
 @pedidos_bp.route(
@@ -286,7 +307,8 @@ def agregar_producto_carrito(id_cliente):
     methods=['PUT']
 )
 def actualizar_cantidad_carrito(id_cliente, id_producto):
-    datos = request.get_json()
+
+    datos = request.get_json(silent=True)
 
     if not datos or 'cantidad' not in datos:
         return jsonify({
@@ -307,6 +329,7 @@ def actualizar_cantidad_carrito(id_cliente, id_producto):
     cursor = mysql.connection.cursor()
 
     try:
+
         id_carrito = obtener_carrito_activo(
             cursor,
             id_cliente,
@@ -315,6 +338,7 @@ def actualizar_cantidad_carrito(id_cliente, id_producto):
 
         if not id_carrito:
             mysql.connection.rollback()
+
             return jsonify({
                 'mensaje': 'El cliente no tiene un carrito activo.'
             }), 404
@@ -327,6 +351,7 @@ def actualizar_cantidad_carrito(id_cliente, id_producto):
         """, (cantidad, id_carrito, id_producto))
 
         if cursor.rowcount == 0:
+
             cursor.execute("""
                 SELECT id_detalle_carrito
                 FROM detalle_carrito
@@ -336,6 +361,7 @@ def actualizar_cantidad_carrito(id_cliente, id_producto):
 
             if not cursor.fetchone():
                 mysql.connection.rollback()
+
                 return jsonify({
                     'mensaje': 'El producto no está en el carrito.'
                 }), 404
@@ -348,6 +374,7 @@ def actualizar_cantidad_carrito(id_cliente, id_producto):
 
     except Exception as e:
         mysql.connection.rollback()
+
         return jsonify({
             'mensaje': 'No se pudo actualizar la cantidad.',
             'error': str(e)
@@ -358,7 +385,7 @@ def actualizar_cantidad_carrito(id_cliente, id_producto):
 
 
 # ==========================================
-# DELETE: Eliminar producto del carrito
+# ELIMINAR PRODUCTO DEL CARRITO
 # ==========================================
 
 @pedidos_bp.route(
@@ -366,9 +393,11 @@ def actualizar_cantidad_carrito(id_cliente, id_producto):
     methods=['DELETE']
 )
 def eliminar_producto_carrito(id_cliente, id_producto):
+
     cursor = mysql.connection.cursor()
 
     try:
+
         id_carrito = obtener_carrito_activo(
             cursor,
             id_cliente,
@@ -377,6 +406,7 @@ def eliminar_producto_carrito(id_cliente, id_producto):
 
         if not id_carrito:
             mysql.connection.rollback()
+
             return jsonify({
                 'mensaje': 'El cliente no tiene un carrito activo.'
             }), 404
@@ -389,6 +419,7 @@ def eliminar_producto_carrito(id_cliente, id_producto):
 
         if cursor.rowcount == 0:
             mysql.connection.rollback()
+
             return jsonify({
                 'mensaje': 'El producto no está en el carrito.'
             }), 404
@@ -401,6 +432,7 @@ def eliminar_producto_carrito(id_cliente, id_producto):
 
     except Exception as e:
         mysql.connection.rollback()
+
         return jsonify({
             'mensaje': 'No se pudo eliminar el producto.',
             'error': str(e)
@@ -411,7 +443,7 @@ def eliminar_producto_carrito(id_cliente, id_producto):
 
 
 # ==========================================
-# POST: Confirmar carrito y crear pedido
+# CONFIRMAR PEDIDO
 # ==========================================
 
 @pedidos_bp.route(
@@ -419,7 +451,8 @@ def eliminar_producto_carrito(id_cliente, id_producto):
     methods=['POST']
 )
 def confirmar_pedido(id_cliente):
-    datos = request.get_json() or {}
+
+    datos = request.get_json(silent=True) or {}
 
     tipo_entrega = datos.get('tipo_entrega')
     id_direccion = datos.get('id_direccion')
@@ -432,18 +465,31 @@ def confirmar_pedido(id_cliente):
             'mensaje': 'El tipo de entrega debe ser Domicilio o Recoger.'
         }), 400
 
-    if tipo_entrega == 'Domicilio' and not id_direccion:
-        return jsonify({
-            'mensaje': 'Debes seleccionar una dirección para la entrega.'
-        }), 400
+    if tipo_entrega == 'Domicilio':
 
-    if tipo_entrega == 'Recoger':
+        try:
+            id_direccion = int(id_direccion)
+        except (TypeError, ValueError):
+            return jsonify({
+                'mensaje': 'Debes seleccionar una dirección válida.'
+            }), 400
+
+        if id_direccion <= 0:
+            return jsonify({
+                'mensaje': 'Debes seleccionar una dirección válida.'
+            }), 400
+
+    else:
         id_direccion = None
 
     cursor = mysql.connection.cursor()
 
     try:
-        # Bloquear el carrito para evitar confirmaciones simultáneas.
+
+        # ----------------------------------
+        # OBTENER CARRITO ACTIVO
+        # ----------------------------------
+
         id_carrito = obtener_carrito_activo(
             cursor,
             id_cliente,
@@ -452,14 +498,19 @@ def confirmar_pedido(id_cliente):
 
         if not id_carrito:
             mysql.connection.rollback()
+
             return jsonify({
                 'mensaje': 'No tienes un carrito activo.'
             }), 404
 
-        # Verificar que el cliente exista y consultar su descuento.
+        # ----------------------------------
+        # CONSULTAR CLIENTE Y SU USUARIO
+        # ----------------------------------
+
         cursor.execute("""
             SELECT
                 c.id_cliente,
+                c.id_usuario,
                 c.id_descuento,
                 c.estado_acreditacion,
                 d.porcentaje,
@@ -475,12 +526,27 @@ def confirmar_pedido(id_cliente):
 
         if not cliente:
             mysql.connection.rollback()
+
             return jsonify({
                 'mensaje': 'El cliente no existe.'
             }), 404
 
-        # Validar dirección y pertenencia al cliente.
+        # Obtener el usuario relacionado con el cliente.
+        id_usuario = cliente[1]
+
+        if id_usuario is None:
+            mysql.connection.rollback()
+
+            return jsonify({
+                'mensaje': 'El cliente no tiene un usuario relacionado.'
+            }), 400
+
+        # ----------------------------------
+        # VALIDAR DIRECCIÓN DE ENTREGA
+        # ----------------------------------
+
         if tipo_entrega == 'Domicilio':
+
             cursor.execute("""
                 SELECT id_direccion
                 FROM direcciones
@@ -490,11 +556,15 @@ def confirmar_pedido(id_cliente):
 
             if not cursor.fetchone():
                 mysql.connection.rollback()
+
                 return jsonify({
                     'mensaje': 'La dirección no existe o no pertenece al cliente.'
                 }), 400
 
-        # Consultar los productos del carrito con sus precios actuales.
+        # ----------------------------------
+        # CONSULTAR PRODUCTOS DEL CARRITO
+        # ----------------------------------
+
         cursor.execute("""
             SELECT
                 dc.id_producto,
@@ -513,15 +583,16 @@ def confirmar_pedido(id_cliente):
 
         if not productos:
             mysql.connection.rollback()
+
             return jsonify({
                 'mensaje': 'El carrito está vacío.'
             }), 400
 
         subtotal = Decimal('0.00')
-
         detalles = []
 
         for producto in productos:
+
             id_producto = producto[0]
             cantidad = int(producto[1])
             nombre = producto[2]
@@ -530,11 +601,15 @@ def confirmar_pedido(id_cliente):
 
             if disponible != 1:
                 mysql.connection.rollback()
+
                 return jsonify({
                     'mensaje': f'El producto {nombre} ya no está disponible.'
                 }), 400
 
-            subtotal_producto = dinero(precio * cantidad)
+            subtotal_producto = dinero(
+                precio * cantidad
+            )
+
             subtotal += subtotal_producto
 
             detalles.append({
@@ -547,14 +622,16 @@ def confirmar_pedido(id_cliente):
 
         subtotal = dinero(subtotal)
 
-        # Aplicar descuento solamente si la acreditación está validada
-        # y el descuento continúa activo.
+        # ----------------------------------
+        # CALCULAR DESCUENTO
+        # ----------------------------------
+
         porcentaje_descuento = Decimal('0.00')
 
-        id_descuento = cliente[1]
-        estado_acreditacion = cliente[2]
-        porcentaje_bd = cliente[3]
-        estado_descuento = cliente[4]
+        id_descuento = cliente[2]
+        estado_acreditacion = cliente[3]
+        porcentaje_bd = cliente[4]
+        estado_descuento = cliente[5]
 
         if (
             id_descuento is not None
@@ -562,10 +639,13 @@ def confirmar_pedido(id_cliente):
             and porcentaje_bd is not None
             and estado_descuento == 1
         ):
-            porcentaje_descuento = Decimal(str(porcentaje_bd))
+            porcentaje_descuento = Decimal(
+                str(porcentaje_bd)
+            )
 
         if porcentaje_descuento < 0 or porcentaje_descuento > 100:
             mysql.connection.rollback()
+
             return jsonify({
                 'mensaje': 'El porcentaje de descuento configurado no es válido.'
             }), 400
@@ -574,17 +654,27 @@ def confirmar_pedido(id_cliente):
             subtotal * porcentaje_descuento / Decimal('100')
         )
 
-        costo_entrega = (
-            COSTO_ENTREGA
-            if tipo_entrega == 'Domicilio'
-            else Decimal('0.00')
-        )
+        # ----------------------------------
+        # CALCULAR COSTO DE ENTREGA
+        # ----------------------------------
+
+        if tipo_entrega == 'Domicilio':
+            costo_entrega = COSTO_ENTREGA
+        else:
+            costo_entrega = Decimal('0.00')
+
+        # ----------------------------------
+        # CALCULAR TOTAL
+        # ----------------------------------
 
         total = dinero(
             subtotal - monto_descuento + costo_entrega
         )
 
-        # Crear pedido.
+        # ----------------------------------
+        # REGISTRAR PEDIDO
+        # ----------------------------------
+
         cursor.execute("""
             INSERT INTO pedidos (
                 id_cliente,
@@ -601,11 +691,12 @@ def confirmar_pedido(id_cliente):
                 observaciones
             )
             VALUES (
-                %s, NULL, %s, NOW(), %s, %s, %s, %s, %s, %s,
+                %s, %s, %s, NOW(), %s, %s, %s, %s, %s, %s,
                 'Pendiente', %s
             )
         """, (
             id_cliente,
+            id_usuario,
             id_direccion,
             tipo_entrega,
             subtotal,
@@ -618,8 +709,12 @@ def confirmar_pedido(id_cliente):
 
         id_pedido = cursor.lastrowid
 
-        # Guardar los productos y precios históricos del pedido.
+        # ----------------------------------
+        # REGISTRAR DETALLES DEL PEDIDO
+        # ----------------------------------
+
         for detalle in detalles:
+
             cursor.execute("""
                 INSERT INTO detalle_pedidos (
                     id_pedido,
@@ -639,7 +734,10 @@ def confirmar_pedido(id_cliente):
                 detalle['subtotal']
             ))
 
-        # Registrar el primer estado en el historial.
+        # ----------------------------------
+        # REGISTRAR HISTORIAL DEL PEDIDO
+        # ----------------------------------
+
         cursor.execute("""
             INSERT INTO historial_pedidos (
                 id_pedido,
@@ -648,21 +746,36 @@ def confirmar_pedido(id_cliente):
                 comentario,
                 fecha_cambio
             )
-            VALUES (%s, NULL, 'Pendiente', 'Pedido creado por el cliente', NOW())
-        """, (id_pedido,))
+            VALUES (
+                %s, %s, 'Pendiente',
+                'Pedido creado por el cliente',
+                NOW()
+            )
+        """, (id_pedido, id_usuario))
 
-        # Marcar el carrito como convertido.
+        # ----------------------------------
+        # CONVERTIR CARRITO
+        # ----------------------------------
+
         cursor.execute("""
             UPDATE carritos
             SET estado = 'Convertido'
             WHERE id_carrito = %s
         """, (id_carrito,))
 
+        # ----------------------------------
+        # GUARDAR TRANSACCIÓN
+        # ----------------------------------
+
         mysql.connection.commit()
 
         return jsonify({
             'mensaje': 'Pedido confirmado correctamente.',
             'id_pedido': id_pedido,
+            'id_cliente': id_cliente,
+            'id_usuario': id_usuario,
+            'id_direccion': id_direccion,
+            'tipo_entrega': tipo_entrega,
             'subtotal': float(subtotal),
             'porcentaje_descuento': float(porcentaje_descuento),
             'monto_descuento': float(monto_descuento),
@@ -673,6 +786,7 @@ def confirmar_pedido(id_cliente):
 
     except Exception as e:
         mysql.connection.rollback()
+
         return jsonify({
             'mensaje': 'No se pudo confirmar el pedido.',
             'error': str(e)
@@ -683,7 +797,7 @@ def confirmar_pedido(id_cliente):
 
 
 # ==========================================
-# GET: Historial de pedidos de un cliente
+# CONSULTAR PEDIDOS DE UN CLIENTE
 # ==========================================
 
 @pedidos_bp.route(
@@ -691,9 +805,12 @@ def confirmar_pedido(id_cliente):
     methods=['GET']
 )
 def obtener_pedidos_cliente(id_cliente):
+
     cursor = mysql.connection.cursor()
 
     try:
+
+        # Verificar que exista el cliente.
         cursor.execute("""
             SELECT id_cliente
             FROM clientes
@@ -705,6 +822,7 @@ def obtener_pedidos_cliente(id_cliente):
                 'mensaje': 'El cliente no existe.'
             }), 404
 
+        # Consultar los pedidos.
         cursor.execute("""
             SELECT
                 id_pedido,
@@ -722,11 +840,18 @@ def obtener_pedidos_cliente(id_cliente):
             ORDER BY fecha_pedido DESC
         """, (id_cliente,))
 
-        columnas = [col[0] for col in cursor.description]
+        columnas = [
+            col[0] for col in cursor.description
+        ]
+
+        filas = cursor.fetchall()
         pedidos = []
 
-        for fila in cursor.fetchall():
-            pedido = dict(zip(columnas, fila))
+        for fila in filas:
+
+            pedido = dict(
+                zip(columnas, fila)
+            )
 
             for campo in (
                 'subtotal',
@@ -735,12 +860,52 @@ def obtener_pedidos_cliente(id_cliente):
                 'costo_entrega',
                 'total'
             ):
-                pedido[campo] = float(pedido[campo])
+                pedido[campo] = float(
+                    pedido[campo] or 0
+                )
 
             if pedido['fecha_pedido']:
                 pedido['fecha_pedido'] = str(
                     pedido['fecha_pedido']
                 )
+
+            # Consultar productos del pedido.
+            cursor.execute("""
+                SELECT
+                    id_detalle_pedido,
+                    id_producto,
+                    nombre_producto,
+                    cantidad,
+                    precio_unitario,
+                    subtotal
+                FROM detalle_pedidos
+                WHERE id_pedido = %s
+                ORDER BY id_detalle_pedido
+            """, (pedido['id_pedido'],))
+
+            columnas_detalle = [
+                col[0] for col in cursor.description
+            ]
+
+            productos = []
+
+            for fila_detalle in cursor.fetchall():
+
+                producto = dict(
+                    zip(columnas_detalle, fila_detalle)
+                )
+
+                producto['precio_unitario'] = float(
+                    producto['precio_unitario'] or 0
+                )
+
+                producto['subtotal'] = float(
+                    producto['subtotal'] or 0
+                )
+
+                productos.append(producto)
+
+            pedido['productos'] = productos
 
             pedidos.append(pedido)
 
@@ -757,7 +922,7 @@ def obtener_pedidos_cliente(id_cliente):
 
 
 # ==========================================
-# GET: Consultar detalle de un pedido
+# CONSULTAR DETALLE DE UN PEDIDO
 # ==========================================
 
 @pedidos_bp.route(
@@ -765,14 +930,17 @@ def obtener_pedidos_cliente(id_cliente):
     methods=['GET']
 )
 def obtener_detalle_pedido(id_pedido):
+
     cursor = mysql.connection.cursor()
 
     try:
+
         cursor.execute("""
             SELECT
                 p.id_pedido,
                 p.id_cliente,
-                c.id_usuario,
+                p.id_usuario,
+                c.id_usuario AS id_usuario_cliente,
                 p.id_direccion,
                 p.fecha_pedido,
                 p.tipo_entrega,
@@ -796,8 +964,13 @@ def obtener_detalle_pedido(id_pedido):
                 'mensaje': 'El pedido no existe.'
             }), 404
 
-        columnas = [col[0] for col in cursor.description]
-        pedido = dict(zip(columnas, fila))
+        columnas = [
+            col[0] for col in cursor.description
+        ]
+
+        pedido = dict(
+            zip(columnas, fila)
+        )
 
         for campo in (
             'subtotal',
@@ -806,13 +979,16 @@ def obtener_detalle_pedido(id_pedido):
             'costo_entrega',
             'total'
         ):
-            pedido[campo] = float(pedido[campo])
+            pedido[campo] = float(
+                pedido[campo] or 0
+            )
 
         if pedido['fecha_pedido']:
             pedido['fecha_pedido'] = str(
                 pedido['fecha_pedido']
             )
 
+        # Consultar productos.
         cursor.execute("""
             SELECT
                 id_detalle_pedido,
@@ -833,15 +1009,24 @@ def obtener_detalle_pedido(id_pedido):
         detalles = []
 
         for fila_detalle in cursor.fetchall():
-            detalle = dict(zip(columnas_detalle, fila_detalle))
-            detalle['precio_unitario'] = float(
-                detalle['precio_unitario']
+
+            detalle = dict(
+                zip(columnas_detalle, fila_detalle)
             )
-            detalle['subtotal'] = float(detalle['subtotal'])
+
+            detalle['precio_unitario'] = float(
+                detalle['precio_unitario'] or 0
+            )
+
+            detalle['subtotal'] = float(
+                detalle['subtotal'] or 0
+            )
+
             detalles.append(detalle)
 
         pedido['productos'] = detalles
 
+        # Consultar historial.
         cursor.execute("""
             SELECT
                 estado,
@@ -855,6 +1040,7 @@ def obtener_detalle_pedido(id_pedido):
         historial = []
 
         for estado, comentario, fecha in cursor.fetchall():
+
             historial.append({
                 'estado': estado,
                 'comentario': comentario,

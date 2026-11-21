@@ -1,0 +1,293 @@
+
+<section class="min-h-screen bg-zinc-50 px-4 py-10 sm:px-8">
+
+  <!-- ENCABEZADO -->
+  <div class="mx-auto max-w-7xl">
+
+    <div class="mb-8">
+      <p class="text-sm font-bold uppercase tracking-widest text-red-600">
+        Burguer.ING
+      </p>
+
+      <h1 class="mt-2 text-3xl font-black text-zinc-900 sm:text-4xl">
+        Mis pedidos
+      </h1>
+
+      <p class="mt-3 text-zinc-500">
+        Consulta tus pedidos y conoce el estado de preparación.
+      </p>
+    </div>
+
+    <!-- RESUMEN -->
+    <div class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+
+      <div class="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+        <p class="text-sm text-zinc-500">Total de pedidos</p>
+        <p class="mt-2 text-3xl font-black text-zinc-900">
+          {{ totalPedidos }}
+        </p>
+      </div>
+
+      <div class="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+        <p class="text-sm text-zinc-500">Pendientes</p>
+        <p class="mt-2 text-3xl font-black text-amber-600">
+          {{ pedidosPendientes }}
+        </p>
+      </div>
+
+      <div class="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+        <p class="text-sm text-zinc-500">En preparación</p>
+        <p class="mt-2 text-3xl font-black text-blue-600">
+          {{ pedidosPreparacion }}
+        </p>
+      </div>
+
+      <div class="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+        <p class="text-sm text-zinc-500">Listos para recoger</p>
+        <p class="mt-2 text-3xl font-black text-green-600">
+          {{ pedidosListos }}
+        </p>
+      </div>
+
+    </div>
+
+    <!-- FILTROS -->
+    <div class="mb-8">
+
+      <h2 class="mb-4 text-lg font-extrabold text-zinc-900">
+        Filtrar pedidos
+      </h2>
+
+      <div class="flex flex-wrap gap-2">
+
+        <button
+          *ngFor="let estado of estados"
+          (click)="cambiarFiltro(estado)"
+          [ngClass]="filtroEstado === estado
+            ? 'bg-red-600 text-white border-red-600'
+            : 'bg-white text-zinc-700 border-zinc-200 hover:bg-zinc-100'"
+          class="rounded-full border px-4 py-2 text-sm font-bold transition">
+          {{ estado }}
+        </button>
+
+      </div>
+
+    </div>
+
+    <!-- LISTADO -->
+    <div class="space-y-5">
+
+      <!-- CARGANDO -->
+      <div
+        *ngIf="cargando"
+        class="rounded-2xl border border-zinc-200 bg-white p-10 text-center">
+
+        <div class="text-4xl">⏳</div>
+
+        <h3 class="mt-4 text-xl font-black text-zinc-900">
+          Cargando pedidos...
+        </h3>
+
+        <p class="mt-2 text-zinc-500">
+          Estamos consultando tus pedidos.
+        </p>
+
+      </div>
+
+      <!-- ERROR -->
+      <div
+        *ngIf="!cargando && error"
+        class="rounded-2xl border border-red-200 bg-red-50 p-5 text-center text-red-700">
+
+        <div class="text-3xl">⚠️</div>
+
+        <p class="mt-3 font-bold">
+          {{ error }}
+        </p>
+
+        <button
+          (click)="cargarPedidos()"
+          class="mt-4 rounded-xl bg-red-600 px-5 py-2 font-bold text-white transition hover:bg-red-700">
+          Reintentar
+        </button>
+
+      </div>
+
+      <!-- PEDIDOS -->
+      <div
+        *ngFor="let pedido of pedidosFiltrados"
+        [hidden]="cargando || !!error"
+        class="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
+
+        <!-- CABECERA DEL PEDIDO -->
+        <div
+          class="flex flex-col gap-4 border-b border-zinc-100 p-5 sm:flex-row sm:items-center sm:justify-between">
+
+          <div>
+            <p class="text-xs font-bold uppercase tracking-wider text-zinc-400">
+              Número de pedido
+            </p>
+
+            <h3 class="mt-1 text-xl font-black text-zinc-900">
+              #{{ pedido.id }}
+            </h3>
+
+            <p class="mt-1 text-sm text-zinc-500">
+              {{ pedido.fecha }}
+            </p>
+          </div>
+
+          <div>
+            <span
+              [ngClass]="obtenerColorEstado(pedido.estado)"
+              class="inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-bold">
+
+              <span>{{ obtenerIconoEstado(pedido.estado) }}</span>
+              {{ pedido.estado }}
+
+            </span>
+          </div>
+
+        </div>
+
+        <!-- CONTENIDO -->
+        <div class="p-5">
+
+          <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
+
+            <!-- PRODUCTOS -->
+            <div class="md:col-span-2">
+
+              <h4
+                class="mb-3 text-sm font-extrabold uppercase tracking-wide text-zinc-500">
+                Productos
+              </h4>
+
+              <ul class="space-y-2">
+
+                <li
+                  *ngFor="let producto of pedido.productos"
+                  class="flex items-center gap-3 text-zinc-700">
+
+                  <span
+                    class="flex h-9 w-9 items-center justify-center rounded-lg bg-red-50">
+                    🍔
+                  </span>
+
+                  <span class="font-medium">
+                    {{ producto }}
+                  </span>
+
+                </li>
+
+                <!-- SIN PRODUCTOS -->
+                <li
+                  *ngIf="pedido.productos.length === 0"
+                  class="rounded-xl bg-zinc-50 p-4 text-sm text-zinc-500">
+                  No se encontraron detalles de los productos de este pedido.
+                </li>
+
+              </ul>
+
+            </div>
+
+            <!-- INFORMACIÓN -->
+            <div class="rounded-xl bg-zinc-50 p-4">
+
+              <p class="text-sm font-bold text-zinc-500">
+                Tipo de entrega
+              </p>
+
+              <p class="mt-1 font-semibold text-zinc-900">
+                {{ pedido.tipoEntrega }}
+              </p>
+
+              <div class="my-4 border-t border-zinc-200"></div>
+
+              <p class="text-sm font-bold text-zinc-500">
+                Total del pedido
+              </p>
+
+              <p class="mt-1 text-2xl font-black text-red-600">
+                ${{ pedido.total | number:'1.2-2' }} MXN
+              </p>
+
+            </div>
+
+          </div>
+
+          <!-- SEGUIMIENTO -->
+          <div class="mt-6 border-t border-zinc-100 pt-5">
+
+            <h4 class="mb-4 text-sm font-extrabold text-zinc-900">
+              Seguimiento de pedido
+            </h4>
+
+            <div class="flex flex-wrap gap-2">
+
+              <!-- PENDIENTE -->
+              <div
+                [ngClass]="pedido.estado === 'Pendiente'
+                  ? 'border-amber-300 bg-amber-50 text-amber-700'
+                  : 'border-zinc-200 bg-zinc-50 text-zinc-400'"
+                class="rounded-xl border px-3 py-2 text-xs font-bold">
+                1. Pendiente
+              </div>
+
+              <!-- PREPARACIÓN -->
+              <div
+                [ngClass]="pedido.estado === 'En preparación'
+                  ? 'border-blue-300 bg-blue-50 text-blue-700'
+                  : 'border-zinc-200 bg-zinc-50 text-zinc-400'"
+                class="rounded-xl border px-3 py-2 text-xs font-bold">
+                2. Preparación
+              </div>
+
+              <!-- LISTO -->
+              <div
+                [ngClass]="pedido.estado === 'Listo para recoger'
+                  ? 'border-green-300 bg-green-50 text-green-700'
+                  : 'border-zinc-200 bg-zinc-50 text-zinc-400'"
+                class="rounded-xl border px-3 py-2 text-xs font-bold">
+                3. Listo
+              </div>
+
+              <!-- ENTREGADO -->
+              <div
+                [ngClass]="pedido.estado === 'Entregado'
+                  ? 'border-zinc-300 bg-zinc-200 text-zinc-700'
+                  : 'border-zinc-200 bg-zinc-50 text-zinc-400'"
+                class="rounded-xl border px-3 py-2 text-xs font-bold">
+                4. Entregado
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- SIN PEDIDOS -->
+      <div
+        *ngIf="!cargando && !error && pedidosFiltrados.length === 0"
+        class="rounded-2xl border border-zinc-200 bg-white p-10 text-center">
+
+        <div class="text-5xl">📦</div>
+
+        <h3 class="mt-4 text-xl font-black text-zinc-900">
+          No hay pedidos
+        </h3>
+
+        <p class="mt-2 text-zinc-500">
+          No se encontraron pedidos con este estado.
+        </p>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</section>

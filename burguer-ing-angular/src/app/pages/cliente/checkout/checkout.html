@@ -1,0 +1,800 @@
+
+<!-- FONDO OSCURO DEL MODAL -->
+<div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/75 p-3 backdrop-blur-sm">
+
+  <!-- CONTENEDOR PRINCIPAL -->
+  <div
+    class="relative flex max-h-[95vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="checkout-title">
+
+    <!-- ENCABEZADO -->
+    <div class="flex shrink-0 items-center justify-between border-b border-gray-200 px-6 py-5">
+
+      <div>
+
+        <span class="mb-2 inline-block rounded-lg bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">
+          BURGUER.ING
+        </span>
+
+        <h1 id="checkout-title" class="text-2xl font-extrabold text-gray-900">
+          Finalizar compra
+        </h1>
+
+        <p class="mt-1 text-sm text-gray-500">
+          Completa tus datos para realizar tu pedido.
+        </p>
+
+      </div>
+
+      <button
+        type="button"
+        (click)="volverAlCarrito()"
+        class="flex h-10 w-10 items-center justify-center rounded-full bg-gray-900 text-2xl font-semibold text-white transition hover:bg-red-600"
+        aria-label="Cerrar">
+        ×
+      </button>
+
+    </div>
+
+    <!-- ====================================== -->
+    <!-- FORMULARIO DEL CHECKOUT -->
+    <!-- ====================================== -->
+
+    <div *ngIf="!pedidoConfirmado" class="overflow-y-auto p-6">
+
+      <div class="grid grid-cols-1 gap-6 lg:grid-cols-5">
+
+        <!-- FORMULARIO -->
+        <div class="space-y-6 lg:col-span-3">
+
+          <!-- DATOS DEL CLIENTE -->
+          <section class="rounded-xl border border-gray-200 p-5">
+
+            <div class="mb-4 flex items-center justify-between">
+
+              <h2 class="text-lg font-extrabold text-gray-900">
+                Datos del cliente
+              </h2>
+
+              <a
+                routerLink="/mi-perfil"
+                class="text-xs font-semibold text-red-600 hover:text-red-700">
+                Editar perfil
+              </a>
+
+            </div>
+
+            <div
+              *ngIf="cargandoPerfil"
+              class="mb-4 rounded-lg bg-gray-50 p-3 text-sm text-gray-500">
+              Cargando tus datos personales...
+            </div>
+
+            <div
+              *ngIf="mensajePerfil"
+              class="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+              {{ mensajePerfil }}
+            </div>
+
+            <div class="mb-4">
+
+              <label class="mb-2 block text-sm font-semibold text-gray-700">
+                Nombre completo
+              </label>
+
+              <input
+                type="text"
+                [(ngModel)]="nombre"
+                name="nombre"
+                readonly
+                class="block w-full cursor-not-allowed rounded-lg border border-gray-300 bg-gray-100 p-3 text-sm text-gray-700">
+
+            </div>
+
+            <div>
+
+              <label class="mb-2 block text-sm font-semibold text-gray-700">
+                Teléfono
+              </label>
+
+              <input
+                type="tel"
+                [(ngModel)]="telefono"
+                name="telefono"
+                readonly
+                class="block w-full cursor-not-allowed rounded-lg border border-gray-300 bg-gray-100 p-3 text-sm text-gray-700">
+
+            </div>
+
+            <p class="mt-3 text-xs text-gray-500">
+              Estos datos se obtienen de tu perfil de cliente.
+              Puedes modificarlos desde Mi Perfil.
+            </p>
+
+          </section>
+
+          <!-- TIPO DE ENTREGA -->
+          <section class="rounded-xl border border-gray-200 p-5">
+
+            <h2 class="mb-4 text-lg font-extrabold text-gray-900">
+              Tipo de entrega
+            </h2>
+
+            <div class="space-y-3">
+
+              <!-- RECOGER EN SUCURSAL -->
+              <label
+                class="flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition"
+                [class.border-red-500]="tipoEntrega === 'Recoger'"
+                [class.bg-red-50]="tipoEntrega === 'Recoger'"
+                [class.border-gray-200]="tipoEntrega !== 'Recoger'">
+
+                <input
+                  type="radio"
+                  name="entrega"
+                  value="Recoger"
+                  [(ngModel)]="tipoEntrega"
+                  class="mt-1 h-4 w-4 border-gray-300 text-red-600 focus:ring-red-500">
+
+                <div>
+
+                  <span class="block text-sm font-bold text-gray-900">
+                    Recoger en sucursal
+                  </span>
+
+                  <span class="mt-1 block text-xs text-gray-500">
+                    Recoge tu pedido personalmente.
+                  </span>
+
+                </div>
+
+              </label>
+
+              <!-- ENTREGA A DOMICILIO -->
+              <label
+                class="flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition"
+                [class.border-red-500]="tipoEntrega === 'Domicilio'"
+                [class.bg-red-50]="tipoEntrega === 'Domicilio'"
+                [class.border-gray-200]="tipoEntrega !== 'Domicilio'">
+
+                <input
+                  type="radio"
+                  name="entrega"
+                  value="Domicilio"
+                  [(ngModel)]="tipoEntrega"
+                  class="mt-1 h-4 w-4 border-gray-300 text-red-600 focus:ring-red-500">
+
+                <div>
+
+                  <span class="block text-sm font-bold text-gray-900">
+                    Entrega a domicilio
+                  </span>
+
+                  <span class="mt-1 block text-xs text-gray-500">
+                    Recibe tu pedido en una de tus direcciones guardadas.
+                  </span>
+
+                </div>
+
+              </label>
+
+            </div>
+
+            <!-- DIRECCIONES GUARDADAS -->
+            <div
+              *ngIf="tipoEntrega === 'Domicilio'"
+              class="mt-5 border-t border-gray-200 pt-5">
+
+              <h3 class="mb-3 text-sm font-bold text-gray-900">
+                Selecciona tu dirección de entrega
+              </h3>
+
+              <!-- CARGANDO DIRECCIONES -->
+              <div
+                *ngIf="cargandoDirecciones"
+                class="rounded-lg bg-gray-50 p-4 text-sm text-gray-500">
+                Cargando tus direcciones...
+              </div>
+
+              <!-- ERROR -->
+              <div
+                *ngIf="mensajeDirecciones"
+                class="mb-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                {{ mensajeDirecciones }}
+              </div>
+
+              <!-- SIN DIRECCIONES -->
+              <div
+                *ngIf="!cargandoDirecciones && direcciones.length === 0"
+                class="rounded-xl border border-amber-200 bg-amber-50 p-4">
+
+                <p class="text-sm font-semibold text-amber-800">
+                  No tienes direcciones guardadas.
+                </p>
+
+                <p class="mt-1 text-xs text-amber-700">
+                  Registra una dirección desde tu perfil para solicitar
+                  entrega a domicilio.
+                </p>
+
+                <a
+                  routerLink="/mi-perfil"
+                  class="mt-3 inline-flex rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700">
+                  + Agregar dirección
+                </a>
+
+              </div>
+
+              <!-- LISTA DE DIRECCIONES -->
+              <div
+                *ngIf="!cargandoDirecciones && direcciones.length > 0"
+                class="space-y-3">
+
+                <label
+                  *ngFor="let direccion of direcciones"
+                  class="flex cursor-pointer gap-3 rounded-xl border p-4 transition"
+                  [class.border-red-500]="idDireccionSeleccionada === direccion.id_direccion"
+                  [class.bg-red-50]="idDireccionSeleccionada === direccion.id_direccion"
+                  [class.border-gray-200]="idDireccionSeleccionada !== direccion.id_direccion">
+
+                  <input
+                    type="radio"
+                    name="direccionSeleccionada"
+                    [checked]="idDireccionSeleccionada === direccion.id_direccion"
+                    (change)="seleccionarDireccion(direccion.id_direccion)"
+                    class="mt-1 h-4 w-4 border-gray-300 text-red-600 focus:ring-red-500">
+
+                  <div class="min-w-0 flex-1">
+
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+
+                      <span class="text-sm font-bold text-gray-900">
+                        {{ direccion.calle }}
+                      </span>
+
+                      <span
+                        *ngIf="idDireccionSeleccionada === direccion.id_direccion"
+                        class="rounded-md bg-red-100 px-2 py-1 text-xs font-bold text-red-700">
+                        Seleccionada
+                      </span>
+
+                    </div>
+
+                    <p class="mt-2 text-sm text-gray-700">
+                      <strong>Número:</strong>
+                      {{ direccion.numero }}
+                    </p>
+
+                    <p class="text-sm text-gray-700">
+                      <strong>Colonia:</strong>
+                      {{ direccion.colonia }}
+                    </p>
+
+                    <p class="text-sm text-gray-700">
+                      <strong>Código postal:</strong>
+                      {{ direccion.codigo_postal }}
+                    </p>
+
+                    <p
+                      *ngIf="direccion.referencias"
+                      class="mt-1 text-xs text-gray-500">
+                      <strong>Referencias:</strong>
+                      {{ direccion.referencias }}
+                    </p>
+
+                  </div>
+
+                </label>
+
+              </div>
+
+              <!-- ADMINISTRAR DIRECCIONES -->
+              <div
+                *ngIf="direcciones.length > 0"
+                class="mt-4 text-right">
+
+                <a
+                  routerLink="/mi-perfil"
+                  class="text-xs font-semibold text-red-600 hover:text-red-700">
+                  Administrar mis direcciones
+                </a>
+
+              </div>
+
+            </div>
+
+          </section>
+
+          <!-- DATOS DE PAGO -->
+          <section class="rounded-xl border border-gray-200 p-5">
+
+            <h2 class="mb-4 text-lg font-extrabold text-gray-900">
+              Pago con tarjeta
+            </h2>
+
+            <div class="mb-4">
+
+              <label class="mb-2 block text-sm font-semibold text-gray-700">
+                Titular de la tarjeta
+              </label>
+
+              <input
+                type="text"
+                [(ngModel)]="titularTarjeta"
+                name="titularTarjeta"
+                placeholder="Nombre del titular"
+                class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-3 text-sm text-gray-900 outline-none focus:border-red-500 focus:ring-2 focus:ring-red-200">
+
+            </div>
+
+            <div class="mb-4">
+
+              <label class="mb-2 block text-sm font-semibold text-gray-700">
+                Número de tarjeta
+              </label>
+
+              <input
+                type="text"
+                [(ngModel)]="numeroTarjeta"
+                name="numeroTarjeta"
+                maxlength="19"
+                placeholder="0000 0000 0000 0000"
+                class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-3 text-sm text-gray-900 outline-none focus:border-red-500 focus:ring-2 focus:ring-red-200">
+
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+
+              <div>
+
+                <label class="mb-2 block text-sm font-semibold text-gray-700">
+                  Fecha de vencimiento
+                </label>
+
+                <input
+                  type="text"
+                  [(ngModel)]="expiracion"
+                  name="expiracion"
+                  maxlength="5"
+                  placeholder="MM/AA"
+                  class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-3 text-sm text-gray-900 outline-none focus:border-red-500 focus:ring-2 focus:ring-red-200">
+
+              </div>
+
+              <div>
+
+                <label class="mb-2 block text-sm font-semibold text-gray-700">
+                  CVV
+                </label>
+
+                <input
+                  type="password"
+                  [(ngModel)]="cvv"
+                  name="cvv"
+                  maxlength="4"
+                  placeholder="123"
+                  class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-3 text-sm text-gray-900 outline-none focus:border-red-500 focus:ring-2 focus:ring-red-200">
+
+              </div>
+
+            </div>
+
+            <div class="mt-4 flex items-center gap-2 rounded-lg bg-amber-50 p-3 text-xs text-amber-800">
+
+              <span>🔒</span>
+
+              <span>
+                Pago de demostración. No se guardan los datos de tu tarjeta.
+              </span>
+
+            </div>
+
+          </section>
+
+        </div>
+
+        <!-- ====================================== -->
+        <!-- RESUMEN DEL PEDIDO -->
+        <!-- ====================================== -->
+
+        <aside class="h-fit rounded-xl border border-gray-200 bg-gray-50 p-5 lg:col-span-2">
+
+          <span class="inline-block rounded-lg bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">
+            TU COMPRA
+          </span>
+
+          <h2 class="mb-6 mt-3 text-xl font-extrabold text-gray-900">
+            Resumen del pedido
+          </h2>
+
+          <!-- PRODUCTOS -->
+          <div class="mb-4 flex justify-between text-sm text-gray-600">
+
+            <span>Productos</span>
+
+            <strong class="text-gray-900">
+              {{ cantidadTotal }}
+            </strong>
+
+          </div>
+
+          <!-- SUBTOTAL -->
+          <div class="mb-4 flex justify-between text-sm text-gray-600">
+
+            <span>Subtotal</span>
+
+            <strong class="text-gray-900">
+              {{ subtotal | currency:'MXN':'symbol':'1.2-2' }}
+            </strong>
+
+          </div>
+
+          <!-- ENVÍO -->
+          <div class="mb-5 flex justify-between text-sm text-gray-600">
+
+            <span>
+              {{ tipoEntrega === 'Domicilio' ? 'Envío a domicilio' : 'Recoger en sucursal' }}
+            </span>
+
+            <strong
+              [class.text-red-600]="tipoEntrega === 'Domicilio'"
+              [class.text-gray-900]="tipoEntrega === 'Recoger'">
+
+              {{ costoEntrega | currency:'MXN':'symbol':'1.2-2' }}
+
+            </strong>
+
+          </div>
+
+          <!-- TOTAL -->
+          <div class="border-t border-gray-200 pt-5">
+
+            <div class="flex items-center justify-between">
+
+              <span class="text-base font-bold text-gray-900">
+                Total
+              </span>
+
+              <strong class="text-2xl font-extrabold text-red-600">
+                {{ total | currency:'MXN':'symbol':'1.2-2' }}
+              </strong>
+
+            </div>
+
+          </div>
+
+          <!-- AVISO -->
+          <div class="mt-5 rounded-lg bg-white p-3 text-xs leading-relaxed text-gray-500">
+
+            <ng-container *ngIf="tipoEntrega === 'Domicilio'; else recogerInfo">
+              Se agregaron $50.00 por el servicio de entrega a domicilio.
+            </ng-container>
+
+            <ng-template #recogerInfo>
+              No se aplica costo de envío al recoger en sucursal.
+            </ng-template>
+
+          </div>
+
+        </aside>
+
+      </div>
+
+      <!-- MENSAJE DE ERROR -->
+      <div
+        *ngIf="mensaje"
+        class="mt-5 rounded-lg border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700"
+        role="alert">
+        {{ mensaje }}
+      </div>
+
+      <!-- BOTONES -->
+      <div class="mt-6 flex flex-col-reverse justify-end gap-3 border-t border-gray-200 pt-5 sm:flex-row">
+
+        <button
+          type="button"
+          (click)="volverAlCarrito()"
+          class="rounded-lg border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-100">
+          Cancelar
+        </button>
+
+        <button
+          type="button"
+          [disabled]="procesando"
+          (click)="pagar()"
+          class="rounded-lg bg-red-600 px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-300 disabled:cursor-not-allowed disabled:opacity-60">
+
+          <span *ngIf="!procesando">🛒</span>
+
+          {{
+            procesando
+              ? 'Procesando pago...'
+              : 'Pagar y confirmar pedido'
+          }}
+
+        </button>
+
+      </div>
+
+    </div>
+
+    <!-- ====================================== -->
+    <!-- PEDIDO CONFIRMADO -->
+    <!-- ====================================== -->
+
+    <div
+      *ngIf="pedidoConfirmado"
+      class="overflow-y-auto bg-gray-50 p-5 sm:p-8">
+
+      <div class="mx-auto max-w-2xl">
+
+        <!-- TARJETA PRINCIPAL DE ÉXITO -->
+        <section class="relative overflow-hidden rounded-2xl border border-green-100 bg-white shadow-lg">
+
+          <!-- DECORACIÓN -->
+          <div class="absolute -right-12 -top-12 h-40 w-40 rounded-full bg-green-50"></div>
+
+          <div class="absolute -left-12 top-20 h-24 w-24 rounded-full bg-amber-50"></div>
+
+          <div class="relative px-6 py-9 text-center sm:px-10">
+
+            <!-- ICONO -->
+            <div class="mx-auto mb-5 flex h-24 w-24 items-center justify-center rounded-full bg-green-100 ring-8 ring-green-50">
+
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-12 w-12 text-green-600"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round">
+
+                <path d="M20 6 9 17l-5-5"></path>
+
+              </svg>
+
+            </div>
+
+            <!-- ETIQUETA -->
+            <span class="inline-flex items-center rounded-full bg-green-100 px-4 py-1.5 text-xs font-extrabold uppercase tracking-wider text-green-700">
+              Pedido registrado correctamente
+            </span>
+
+            <!-- TÍTULO -->
+            <h2 class="mb-3 mt-5 text-3xl font-black tracking-tight text-gray-900 sm:text-4xl">
+              ¡Gracias por tu compra!
+            </h2>
+
+            <p class="mx-auto max-w-md text-sm leading-relaxed text-gray-500">
+              Tu pedido en BURGUER.ING se registró correctamente.
+              Ya puedes consultar su información y seguir su estado.
+            </p>
+
+            <!-- NÚMERO DE PEDIDO -->
+            <div class="mx-auto mt-7 max-w-sm rounded-xl border border-dashed border-gray-300 bg-gray-50 p-5">
+
+              <p class="text-xs font-bold uppercase tracking-widest text-gray-500">
+                Número de pedido
+              </p>
+
+              <p class="mt-2 text-4xl font-black text-gray-900">
+                #{{ numeroPedido }}
+              </p>
+
+              <p class="mt-2 text-xs text-gray-500">
+                Conserva este número para consultar tu pedido.
+              </p>
+
+            </div>
+
+          </div>
+
+          <!-- TOTAL -->
+          <div class="relative border-t border-gray-100 bg-gray-900 px-6 py-6 text-white sm:px-10">
+
+            <div class="flex flex-wrap items-center justify-between gap-3">
+
+              <div>
+
+                <p class="text-sm font-medium text-gray-300">
+                  Total de tu compra
+                </p>
+
+                <p class="mt-1 text-xs text-gray-400">
+                  Importe registrado en tu pedido
+                </p>
+
+              </div>
+
+              <p class="text-3xl font-black text-green-400 sm:text-4xl">
+                {{ totalPedido | currency:'MXN':'symbol':'1.2-2' }}
+              </p>
+
+            </div>
+
+          </div>
+
+        </section>
+
+        <!-- INFORMACIÓN DEL PEDIDO -->
+        <section class="mt-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+
+          <div class="mb-5 flex items-center justify-between gap-3">
+
+            <h3 class="text-lg font-extrabold text-gray-900">
+              Información de tu pedido
+            </h3>
+
+            <span class="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">
+              Pendiente
+            </span>
+
+          </div>
+
+          <!-- CLIENTE -->
+          <div class="mb-5 flex items-start gap-4">
+
+            <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gray-100 text-xl">
+              👤
+            </div>
+
+            <div class="min-w-0 flex-1">
+
+              <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                Cliente
+              </p>
+
+              <p class="mt-1 font-bold text-gray-900">
+                {{ nombre }}
+              </p>
+
+              <p class="mt-1 text-sm text-gray-500">
+                {{ telefono }}
+              </p>
+
+            </div>
+
+          </div>
+
+          <div class="border-t border-gray-100"></div>
+
+          <!-- TIPO DE ENTREGA -->
+          <div class="my-5 flex items-start gap-4">
+
+            <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-xl">
+              {{ tipoEntrega === 'Domicilio' ? '🛵' : '🏪' }}
+            </div>
+
+            <div class="min-w-0 flex-1">
+
+              <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                Modalidad de entrega
+              </p>
+
+              <p class="mt-1 font-bold text-gray-900">
+                {{ tipoEntrega === 'Domicilio' ? 'Entrega a domicilio' : 'Recoger en sucursal' }}
+              </p>
+
+              <p class="mt-1 text-sm text-gray-500">
+                {{ tipoEntrega === 'Domicilio'
+                  ? 'Tu pedido será entregado en la dirección seleccionada.'
+                  : 'Recogerás personalmente tu pedido en sucursal.' }}
+              </p>
+
+            </div>
+
+          </div>
+
+          <!-- DIRECCIÓN SELECCIONADA -->
+          <div
+            *ngIf="tipoEntrega === 'Domicilio' && direccionConfirmada"
+            class="rounded-xl border border-gray-200 bg-gray-50 p-4">
+
+            <div class="mb-3 flex items-center gap-2">
+
+              <span class="text-lg">📍</span>
+
+              <p class="text-sm font-bold text-gray-900">
+                Dirección de entrega
+              </p>
+
+            </div>
+
+            <p class="text-sm font-semibold text-gray-800">
+              {{ direccionConfirmada.calle }}
+              {{ direccionConfirmada.numero }}
+            </p>
+
+            <p class="mt-1 text-sm text-gray-600">
+              Colonia: {{ direccionConfirmada.colonia }}
+            </p>
+
+            <p class="text-sm text-gray-600">
+              Código postal: {{ direccionConfirmada.codigo_postal }}
+            </p>
+
+            <p
+              *ngIf="direccionConfirmada.referencias"
+              class="mt-1 text-sm text-gray-500">
+              Referencias: {{ direccionConfirmada.referencias }}
+            </p>
+
+          </div>
+
+          <!-- INFORMACIÓN DE ESTADO -->
+          <div class="mt-5 rounded-xl border border-blue-100 bg-blue-50 p-4">
+
+            <div class="flex items-start gap-3">
+
+              <span class="text-xl">ℹ️</span>
+
+              <div>
+
+                <p class="text-sm font-bold text-blue-900">
+                  ¿Qué sigue?
+                </p>
+
+                <p class="mt-1 text-xs leading-relaxed text-blue-800">
+                  Tu pedido está registrado con estado pendiente.
+                  Puedes consultar sus actualizaciones desde el historial
+                  de tus pedidos.
+                </p>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </section>
+
+        <!-- BOTONES -->
+        <div class="mt-6 flex flex-col gap-3 sm:flex-row">
+
+          <a
+            routerLink="/mis-pedidos"
+            class="flex flex-1 items-center justify-center gap-2 rounded-xl bg-red-600 px-6 py-4 text-sm font-extrabold text-white shadow-md transition hover:bg-red-700 hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-red-300">
+
+            <span>📋</span>
+
+            Ver mis pedidos
+
+            <span>→</span>
+
+          </a>
+
+          <button
+            type="button"
+            (click)="volverAlCarrito()"
+            class="flex flex-1 items-center justify-center rounded-xl border border-gray-300 bg-white px-6 py-4 text-sm font-bold text-gray-700 transition hover:bg-gray-100">
+
+            Volver al carrito
+
+          </button>
+
+        </div>
+
+        <!-- PIE -->
+        <div class="mt-6 pb-3 text-center">
+
+          <span class="text-sm font-black tracking-widest text-gray-400">
+            BURGUER.ING
+          </span>
+
+          <p class="mt-1 text-xs text-gray-400">
+            Gracias por elegirnos. ¡Esperamos que disfrutes tu pedido!
+          </p>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>

@@ -1,0 +1,654 @@
+<div class="min-h-screen bg-zinc-50 px-4 py-10 sm:px-6">
+
+  <div class="mx-auto max-w-5xl">
+
+    <!-- ENCABEZADO -->
+    <div class="mb-8">
+      <h1 class="text-3xl font-black tracking-tight text-zinc-900 sm:text-4xl">
+        Mi Perfil de Cliente
+      </h1>
+
+      <p class="mt-2 text-sm text-zinc-500 sm:text-base">
+        Actualiza tus datos personales, registra tu cédula profesional
+        y administra tus direcciones de entrega.
+      </p>
+    </div>
+
+    <!-- CARGANDO -->
+    <div
+      *ngIf="cargando"
+      class="mb-6 flex items-center gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-700">
+
+      <svg
+        class="h-5 w-5 animate-spin"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24">
+
+        <circle
+          class="opacity-25"
+          cx="12"
+          cy="12"
+          r="10"
+          stroke="currentColor"
+          stroke-width="4">
+        </circle>
+
+        <path
+          class="opacity-75"
+          fill="currentColor"
+          d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z">
+        </path>
+      </svg>
+
+      Cargando información de tu perfil...
+    </div>
+
+    <!-- ERROR GENERAL -->
+    <div
+      *ngIf="mensajeError"
+      class="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700"
+      role="alert">
+
+      {{ mensajeError }}
+
+    </div>
+
+    <!-- CONTENIDO -->
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+
+      <!-- FORMULARIO DE PERFIL -->
+      <section class="rounded-3xl border border-zinc-200 bg-white p-6 sm:p-8">
+
+        <h2 class="mb-6 text-xl font-black text-zinc-900">
+          Datos personales
+        </h2>
+
+        <form
+          (ngSubmit)="guardarCambios()"
+          class="space-y-5">
+
+          <!-- NOMBRE -->
+          <div>
+            <label
+              for="nombre"
+              class="mb-2 block text-sm font-semibold text-zinc-800">
+
+              Nombre completo
+              <span class="text-red-600">*</span>
+
+            </label>
+
+            <input
+              id="nombre"
+              name="nombre"
+              type="text"
+              [(ngModel)]="nombre"
+              placeholder="Escribe tu nombre completo"
+              maxlength="100"
+              required
+              class="w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-900 outline-none transition focus:border-red-500 focus:ring-2 focus:ring-red-100">
+          </div>
+
+          <!-- CORREO Y TELÉFONO -->
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+
+            <div>
+              <label
+                for="correo"
+                class="mb-2 block text-sm font-semibold text-zinc-800">
+
+                Correo electrónico
+                <span class="text-red-600">*</span>
+
+              </label>
+
+              <input
+                id="correo"
+                name="correo"
+                type="email"
+                [(ngModel)]="correo"
+                placeholder="ejemplo@correo.com"
+                maxlength="120"
+                required
+                class="w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-900 outline-none transition focus:border-red-500 focus:ring-2 focus:ring-red-100">
+            </div>
+
+            <div>
+              <label
+                for="telefono"
+                class="mb-2 block text-sm font-semibold text-zinc-800">
+
+                Teléfono
+
+              </label>
+
+              <input
+                id="telefono"
+                name="telefono"
+                type="tel"
+                [(ngModel)]="telefono"
+                placeholder="477 000 0000"
+                maxlength="20"
+                class="w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-900 outline-none transition focus:border-red-500 focus:ring-2 focus:ring-red-100">
+            </div>
+
+          </div>
+
+          <!-- CÉDULA -->
+          <div>
+            <label
+              for="cedula"
+              class="mb-2 block text-sm font-semibold text-zinc-800">
+
+              Cédula Profesional / Título de Ingeniería
+
+              <span class="text-amber-600">
+                (15% de descuento)
+              </span>
+
+            </label>
+
+            <input
+              id="cedula"
+              name="cedula"
+              type="text"
+              [(ngModel)]="cedula"
+              placeholder="Ingresa tu número de cédula"
+              maxlength="50"
+              class="w-full rounded-xl border border-amber-300 bg-amber-50/30 px-4 py-3 text-sm text-zinc-900 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-100">
+
+            <p class="mt-2 text-xs text-zinc-500">
+              El descuento estará sujeto a la verificación de tu acreditación.
+            </p>
+          </div>
+
+          <!-- MENSAJE DE ERROR -->
+          <div
+            *ngIf="mensajeError && !cargando"
+            class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700">
+
+            {{ mensajeError }}
+
+          </div>
+
+          <!-- MENSAJE DE ÉXITO -->
+          <div
+            *ngIf="mensaje"
+            class="rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-800">
+
+            {{ mensaje }}
+
+          </div>
+
+          <!-- BOTÓN -->
+          <div class="flex justify-end border-t border-zinc-100 pt-5">
+
+            <button
+              type="submit"
+              [disabled]="guardando || cargando"
+              class="rounded-xl bg-red-600 px-6 py-3 text-sm font-extrabold text-white shadow-sm transition hover:bg-red-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60">
+
+              {{ guardando ? 'Guardando...' : 'Guardar cambios' }}
+
+            </button>
+
+          </div>
+
+        </form>
+
+      </section>
+
+      <!-- TARJETA DE PERFIL -->
+      <section class="flex flex-col rounded-3xl bg-[#171717] p-6 text-white sm:p-8">
+
+        <!-- AVATAR -->
+        <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-red-600 text-xl font-black">
+          {{ iniciales }}
+        </div>
+
+        <!-- NOMBRE -->
+        <div class="mt-5">
+
+          <h2 class="break-words text-xl font-extrabold">
+            {{ nombre || 'Nombre del cliente' }}
+          </h2>
+
+          <p class="mt-1 text-sm text-zinc-400">
+            {{ fechaRegistro }}
+          </p>
+
+        </div>
+
+        <!-- RESUMEN -->
+        <div class="mt-6 space-y-4 rounded-2xl border border-zinc-700 bg-zinc-800/80 p-4">
+
+          <div class="flex items-center justify-between gap-3">
+
+            <span class="text-sm text-zinc-400">
+              Pedidos realizados:
+            </span>
+
+            <span class="text-sm font-extrabold">
+              {{ pedidosRealizados }}
+            </span>
+
+          </div>
+
+          <div class="flex items-center justify-between gap-3">
+
+            <span class="text-sm text-zinc-400">
+              Estatus Ingeniero:
+            </span>
+
+            <span class="text-right text-sm font-bold text-amber-400">
+              {{ estadoCedulaTexto }}
+            </span>
+
+          </div>
+
+        </div>
+
+        <!-- CORREO -->
+        <div class="mt-5 break-all">
+
+          <p class="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+            Correo electrónico
+          </p>
+
+          <p class="mt-1 text-sm text-zinc-200">
+            {{ correo || 'No registrado' }}
+          </p>
+
+        </div>
+
+        <!-- TELÉFONO -->
+        <div class="mt-4">
+
+          <p class="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+            Teléfono
+          </p>
+
+          <p class="mt-1 text-sm text-zinc-200">
+            {{ telefono || 'No registrado' }}
+          </p>
+
+        </div>
+
+        <!-- CÉDULA -->
+        <div class="mt-4">
+
+          <p class="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+            Cédula Profesional
+          </p>
+
+          <p class="mt-1 text-sm text-zinc-200">
+            {{ cedula || 'No registrada' }}
+          </p>
+
+        </div>
+
+        <!-- HISTORIAL -->
+        <div class="mt-auto pt-8">
+
+          <a
+            routerLink="/mis-pedidos"
+            class="block rounded-xl bg-zinc-800 px-4 py-3 text-center text-sm font-bold text-white transition hover:bg-zinc-700">
+
+            Ver historial completo de pedidos
+
+          </a>
+
+        </div>
+
+      </section>
+
+    </div>
+
+    <!-- ========================================= -->
+    <!-- MIS DIRECCIONES -->
+    <!-- ========================================= -->
+
+    <section class="mt-8 rounded-3xl border border-zinc-200 bg-white p-6 sm:p-8">
+
+      <!-- ENCABEZADO DE DIRECCIONES -->
+      <div class="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+
+        <div>
+          <span class="mb-2 inline-block rounded-lg bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">
+            ENTREGAS
+          </span>
+
+          <h2 class="text-2xl font-black text-zinc-900">
+            Mis direcciones
+          </h2>
+
+          <p class="mt-1 text-sm text-zinc-500">
+            Administra los domicilios donde podemos entregar tus pedidos.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          (click)="nuevaDireccion()"
+          class="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-red-700">
+
+          <span class="text-lg">+</span>
+          Agregar dirección
+
+        </button>
+
+      </div>
+
+      <!-- MENSAJE DE ERROR DE DIRECCIONES -->
+      <div
+        *ngIf="errorDireccion"
+        class="mt-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+        role="alert">
+
+        {{ errorDireccion }}
+
+      </div>
+
+      <!-- MENSAJE DE ÉXITO DE DIRECCIONES -->
+      <div
+        *ngIf="mensajeDireccion"
+        class="mt-5 rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-800">
+
+        {{ mensajeDireccion }}
+
+      </div>
+
+      <!-- FORMULARIO DE DIRECCIÓN -->
+      <div
+        *ngIf="mostrarFormularioDireccion"
+        class="mt-7 rounded-2xl border border-red-100 bg-red-50/40 p-5 sm:p-6">
+
+        <div class="mb-5 flex items-center justify-between gap-3">
+
+          <h3 class="text-lg font-extrabold text-zinc-900">
+
+            {{ idDireccionEditando !== null
+              ? 'Editar dirección'
+              : 'Registrar nueva dirección' }}
+
+          </h3>
+
+          <button
+            type="button"
+            (click)="cancelarDireccion()"
+            class="rounded-lg px-3 py-1 text-xl font-bold text-zinc-500 transition hover:bg-zinc-200 hover:text-zinc-900"
+            aria-label="Cerrar formulario">
+
+            ×
+
+          </button>
+
+        </div>
+
+        <form
+          (ngSubmit)="guardarDireccion()"
+          class="space-y-4">
+
+          <!-- CALLE Y NÚMERO -->
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+
+            <div>
+
+              <label class="mb-2 block text-sm font-semibold text-zinc-800">
+                Calle *
+              </label>
+
+              <input
+                type="text"
+                name="calle"
+                [(ngModel)]="direccionForm.calle"
+                placeholder="Ej. Avenida Universidad"
+                maxlength="120"
+                required
+                class="w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100">
+
+            </div>
+
+            <div>
+
+              <label class="mb-2 block text-sm font-semibold text-zinc-800">
+                Número exterior / interior
+              </label>
+
+              <input
+                type="text"
+                name="numero"
+                [(ngModel)]="direccionForm.numero"
+                placeholder="Ej. 123, Depto. 4"
+                maxlength="20"
+                class="w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100">
+
+            </div>
+
+          </div>
+
+          <!-- COLONIA Y CÓDIGO POSTAL -->
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+
+            <div>
+
+              <label class="mb-2 block text-sm font-semibold text-zinc-800">
+                Colonia *
+              </label>
+
+              <input
+                type="text"
+                name="colonia"
+                [(ngModel)]="direccionForm.colonia"
+                placeholder="Nombre de la colonia"
+                maxlength="100"
+                required
+                class="w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100">
+
+            </div>
+
+            <div>
+
+              <label class="mb-2 block text-sm font-semibold text-zinc-800">
+                Código postal
+              </label>
+
+              <input
+                type="text"
+                name="codigo_postal"
+                [(ngModel)]="direccionForm.codigo_postal"
+                placeholder="Ej. 37000"
+                maxlength="10"
+                class="w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100">
+
+            </div>
+
+          </div>
+
+          <!-- REFERENCIAS -->
+          <div>
+
+            <label class="mb-2 block text-sm font-semibold text-zinc-800">
+              Referencias
+            </label>
+
+            <textarea
+              name="referencias"
+              [(ngModel)]="direccionForm.referencias"
+              rows="3"
+              maxlength="255"
+              placeholder="Color de la fachada, entre calles, indicaciones para llegar..."
+              class="w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100">
+            </textarea>
+
+          </div>
+
+          <!-- ERROR DEL FORMULARIO -->
+          <div
+            *ngIf="errorDireccion"
+            class="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+
+            {{ errorDireccion }}
+
+          </div>
+
+          <!-- BOTONES -->
+          <div class="flex flex-col-reverse justify-end gap-3 border-t border-red-100 pt-5 sm:flex-row">
+
+            <button
+              type="button"
+              (click)="cancelarDireccion()"
+              class="rounded-xl border border-zinc-300 bg-white px-5 py-3 text-sm font-bold text-zinc-700 transition hover:bg-zinc-100">
+
+              Cancelar
+
+            </button>
+
+            <button
+              type="submit"
+              [disabled]="guardandoDireccion"
+              class="rounded-xl bg-red-600 px-6 py-3 text-sm font-bold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60">
+
+              {{
+                guardandoDireccion
+                  ? 'Guardando...'
+                  : idDireccionEditando !== null
+                    ? 'Actualizar dirección'
+                    : 'Guardar dirección'
+              }}
+
+            </button>
+
+          </div>
+
+        </form>
+
+      </div>
+
+      <!-- LISTA DE DIRECCIONES -->
+      <div class="mt-7">
+
+        <!-- SIN DIRECCIONES -->
+        <div
+          *ngIf="direcciones.length === 0"
+          class="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 px-5 py-10 text-center">
+
+          <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-100 text-2xl">
+            📍
+          </div>
+
+          <h3 class="mt-4 text-lg font-bold text-zinc-900">
+            Todavía no tienes direcciones
+          </h3>
+
+          <p class="mt-2 text-sm text-zinc-500">
+            Agrega tu primer domicilio para poder recibir pedidos en casa.
+          </p>
+
+          <button
+            type="button"
+            (click)="nuevaDireccion()"
+            class="mt-5 rounded-xl bg-red-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-red-700">
+
+            Registrar mi primera dirección
+
+          </button>
+
+        </div>
+
+        <!-- DIRECCIONES REGISTRADAS -->
+        <div
+          *ngIf="direcciones.length > 0"
+          class="grid grid-cols-1 gap-4 md:grid-cols-2">
+
+          <article
+            *ngFor="let direccion of direcciones"
+            class="rounded-2xl border border-zinc-200 bg-white p-5 transition hover:border-red-200 hover:shadow-md">
+
+            <!-- ENCABEZADO -->
+            <div class="flex items-start justify-between gap-3">
+
+              <div class="flex items-center gap-3">
+
+                <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-xl">
+                  📍
+                </div>
+
+                <div>
+                  <h3 class="font-extrabold text-zinc-900">
+                    {{ direccion.calle }}
+                  </h3>
+
+                  <p class="text-xs text-zinc-500">
+                    Dirección de entrega
+                  </p>
+                </div>
+
+              </div>
+
+              <span class="rounded-lg bg-green-50 px-2 py-1 text-xs font-bold text-green-700">
+                Guardada
+              </span>
+
+            </div>
+
+            <!-- INFORMACIÓN -->
+            <div class="mt-5 space-y-2 text-sm text-zinc-600">
+
+              <p>
+                <strong class="text-zinc-800">Número:</strong>
+                {{ direccion.numero || 'No registrado' }}
+              </p>
+
+              <p>
+                <strong class="text-zinc-800">Colonia:</strong>
+                {{ direccion.colonia }}
+              </p>
+
+              <p>
+                <strong class="text-zinc-800">Código postal:</strong>
+                {{ direccion.codigo_postal || 'No registrado' }}
+              </p>
+
+              <p *ngIf="direccion.referencias">
+                <strong class="text-zinc-800">Referencias:</strong>
+                {{ direccion.referencias }}
+              </p>
+
+            </div>
+
+            <!-- ACCIONES -->
+            <div class="mt-5 flex gap-2 border-t border-zinc-100 pt-4">
+
+              <button
+                type="button"
+                (click)="editarDireccion(direccion)"
+                class="flex-1 rounded-lg border border-zinc-300 px-3 py-2 text-xs font-bold text-zinc-700 transition hover:bg-zinc-100">
+
+                Editar
+
+              </button>
+
+              <button
+                type="button"
+                (click)="eliminarDireccion(direccion)"
+                class="flex-1 rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-600 transition hover:bg-red-50">
+
+                Eliminar
+
+              </button>
+
+            </div>
+
+          </article>
+
+        </div>
+
+      </div>
+
+    </section>
+
+  </div>
+
+</div>

@@ -1,0 +1,495 @@
+
+<div class="min-h-screen bg-white text-[#171717]">
+
+  <!-- ====================================== -->
+  <!-- HERO -->
+  <!-- ====================================== -->
+
+  <section class="relative overflow-hidden bg-[#171717] text-white">
+
+    <!-- GRID -->
+    <div
+      class="absolute inset-0 opacity-[0.08]"
+      style="background-image: linear-gradient(#ffffff 1px, transparent 1px), linear-gradient(90deg, #ffffff 1px, transparent 1px); background-size: 32px 32px;">
+    </div>
+
+    <div class="relative mx-auto grid max-w-7xl items-center gap-12 px-6 py-20 lg:grid-cols-2 lg:py-24">
+
+      <!-- TEXTO -->
+      <div>
+
+        <div class="inline-flex items-center gap-2 rounded-full border border-yellow-500/30 bg-yellow-500/10 px-4 py-2 text-xs font-extrabold tracking-wide text-yellow-400">
+
+          <span>♙</span>
+
+          15% DE DESCUENTO CON CÉDULA O TÍTULO DE INGENIERÍA
+
+        </div>
+
+        <h1 class="mt-6 text-5xl font-black leading-[1.05] tracking-tight md:text-7xl">
+
+          Ingeniería en
+
+          <span class="text-red-600">cada</span>
+
+          <span class="block text-red-600">
+            mordida.
+          </span>
+
+        </h1>
+
+        <p class="mt-6 max-w-xl text-lg leading-relaxed text-gray-300">
+
+          Hamburguesas diseñadas con precisión milimétrica en León,
+          Guanajuato. Elige tu especialidad: Civil, Mecánica, Industrial,
+          Sistemas o Química.
+
+        </p>
+
+        <div class="mt-8 flex flex-wrap gap-3">
+
+          <a
+            routerLink="/menu"
+            class="inline-flex items-center gap-3 rounded-xl bg-red-600 px-6 py-4 font-extrabold shadow-lg shadow-red-900/30 transition hover:bg-red-700">
+
+            Explorar Menú Completo
+
+            <span>→</span>
+
+          </a>
+
+          <a
+            routerLink="/carrito"
+            class="rounded-xl border border-white/20 bg-white/10 px-6 py-4 font-bold transition hover:bg-white/20">
+
+            Validar Cédula en Carrito
+
+          </a>
+
+        </div>
+
+      </div>
+
+      <!-- BURGER PRINCIPAL -->
+      <div class="relative mx-auto w-full max-w-xl">
+
+        <div class="overflow-hidden rounded-[2rem] border-4 border-[#292929] bg-[#292929] shadow-2xl">
+
+          <div class="relative">
+
+            <img
+              src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=1200&q=90"
+              alt="Hamburguesa Burguer ING"
+              class="h-[350px] w-full object-cover md:h-[420px]">
+
+            <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"></div>
+
+            <div class="absolute bottom-4 left-4 right-4 rounded-2xl border border-white/10 bg-black/80 p-4 backdrop-blur-lg">
+
+              <div class="flex flex-wrap items-center justify-between gap-3">
+
+                <div>
+
+                  <p class="text-xs font-bold text-yellow-400">
+                    Más pedida en León
+                  </p>
+
+                  <p class="text-lg font-black">
+                    Hamburguesas de Ingeniería
+                  </p>
+
+                </div>
+
+                <p class="text-2xl font-black text-red-500">
+                  $125 MXN
+                </p>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- ====================================== -->
+  <!-- ESPECIALIDADES -->
+  <!-- ====================================== -->
+
+  <section class="bg-white px-6 py-16 md:py-20">
+
+    <div class="mx-auto max-w-7xl">
+
+      <!-- ENCABEZADO -->
+      <div class="mb-10 flex flex-wrap items-end justify-between gap-5">
+
+        <div>
+
+          <p class="text-xs font-extrabold tracking-widest text-red-600">
+            ESPECIALIDADES DE LA CASA
+          </p>
+
+          <h2 class="mt-2 text-3xl font-black md:text-4xl">
+            Nuestras Hamburguesas de Ingeniería
+          </h2>
+
+          <p class="mt-2 text-sm text-gray-500">
+            Conoce nuestras tres especialidades destacadas.
+          </p>
+
+        </div>
+
+        <a
+          routerLink="/menu"
+          class="font-bold text-red-600 transition hover:text-red-800">
+
+          Ver las 5 ingenierías y complementos →
+
+        </a>
+
+      </div>
+
+
+      <!-- CARGANDO -->
+      <div
+        *ngIf="cargando"
+        class="rounded-2xl border border-gray-200 bg-gray-50 p-10 text-center">
+
+        <div class="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-gray-200 border-t-red-600"></div>
+
+        <p class="font-semibold text-gray-700">
+          Cargando nuestras hamburguesas...
+        </p>
+
+        <p class="mt-1 text-sm text-gray-500">
+          Consultando el catálogo de BURGUER.ING.
+        </p>
+
+      </div>
+
+
+      <!-- ERROR -->
+      <div
+        *ngIf="!cargando && error"
+        class="rounded-2xl border border-red-200 bg-red-50 p-8 text-center">
+
+        <p class="text-lg font-bold text-red-700">
+          No se pudieron cargar las hamburguesas.
+        </p>
+
+        <p class="mt-2 text-sm text-red-600">
+          {{ error }}
+        </p>
+
+        <button
+          type="button"
+          (click)="cargarHamburguesas()"
+          class="mt-5 rounded-xl bg-red-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-red-700">
+
+          Volver a intentar
+
+        </button>
+
+      </div>
+
+
+      <!-- TARJETAS: CIVIL, SISTEMAS E INDUSTRIAL -->
+      <div
+        *ngIf="!cargando && !error && hamburguesas.length > 0"
+        class="grid items-stretch gap-6 lg:grid-cols-3">
+
+        <article
+          *ngFor="let burger of hamburguesas"
+          class="flex h-full flex-col overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl">
+
+          <!-- FOTO -->
+          <div class="relative shrink-0">
+
+            <img
+              [src]="burger.imagen"
+              [alt]="burger.nombre"
+              class="h-64 w-full object-cover"
+              loading="lazy">
+
+            <!-- CATEGORÍA -->
+            <div class="absolute left-4 top-4 rounded-full bg-black/80 px-3 py-2 text-xs font-bold text-yellow-400">
+
+              {{ burger.nombre }}
+
+            </div>
+
+            <!-- PRECIO -->
+            <div class="absolute bottom-4 right-4 rounded-xl bg-red-600 px-4 py-2 text-lg font-black text-white shadow-lg">
+
+              ${{ burger.precio.toFixed(2) }}
+
+            </div>
+
+          </div>
+
+
+          <!-- CONTENIDO -->
+          <div class="flex flex-1 flex-col p-5">
+
+            <!-- ESPECIALIDAD Y DISPONIBILIDAD -->
+            <div class="flex flex-wrap items-center justify-between gap-3">
+
+              <p class="text-xs font-extrabold tracking-widest text-red-600">
+                {{ burger.categoria }}
+              </p>
+
+              <span class="whitespace-nowrap text-xs font-bold text-emerald-600">
+
+                ● Disponible
+
+              </span>
+
+            </div>
+
+
+            <!-- NOMBRE -->
+            <h3 class="mt-3 min-h-[3.5rem] text-xl font-black">
+
+              {{ burger.nombre }}
+
+            </h3>
+
+
+            <!-- DESCRIPCIÓN -->
+            <p class="mt-3 min-h-[6rem] text-sm leading-relaxed text-gray-600">
+
+              {{ burger.descripcion }}
+
+            </p>
+
+
+            <!-- INGREDIENTES -->
+            <p class="mt-4 truncate text-xs text-gray-400">
+
+              <span class="font-bold">
+                Ingredientes:
+              </span>
+
+              {{ burger.ingredientes.join(' • ') }}
+
+            </p>
+
+
+            <!-- BOTONES -->
+            <div class="mt-auto flex gap-2 pt-6">
+
+              <!-- DETALLES -->
+              <button
+                type="button"
+                (click)="abrirDetalles(burger)"
+                class="flex h-12 shrink-0 items-center justify-center rounded-xl border border-gray-200 px-5 text-sm font-bold transition hover:bg-gray-100">
+
+                Detalles
+
+              </button>
+
+
+              <!-- AGREGAR -->
+              <button
+                type="button"
+                (click)="agregarAlCarrito(burger)"
+                class="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-[#171717] px-4 text-sm font-extrabold text-white transition hover:bg-red-600">
+
+                <span>🛒</span>
+
+                Agregar al carrito
+
+              </button>
+
+            </div>
+
+          </div>
+
+        </article>
+
+      </div>
+
+
+      <!-- SIN PRODUCTOS -->
+      <div
+        *ngIf="!cargando && !error && hamburguesas.length === 0"
+        class="py-20 text-center">
+
+        <p class="text-4xl">
+          🍔
+        </p>
+
+        <p class="mt-4 text-lg font-bold text-gray-500">
+          No hay hamburguesas disponibles.
+        </p>
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- ====================================== -->
+  <!-- MODAL DE DETALLES -->
+  <!-- ====================================== -->
+
+  <div
+    *ngIf="hamburguesaSeleccionada"
+    class="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/60 p-4 backdrop-blur-sm"
+    (click)="cerrarDetalles()">
+
+    <div
+      class="my-auto w-full max-w-xl overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-2xl"
+      (click)="$event.stopPropagation()">
+
+      <!-- FOTO -->
+      <div class="relative">
+
+        <img
+          [src]="hamburguesaSeleccionada.imagen"
+          [alt]="hamburguesaSeleccionada.nombre"
+          class="h-56 w-full object-cover sm:h-64">
+
+        <button
+          type="button"
+          (click)="cerrarDetalles()"
+          class="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-black/80 text-xl text-white transition hover:bg-red-600">
+
+          ×
+
+        </button>
+
+      </div>
+
+
+      <!-- INFORMACIÓN -->
+      <div class="p-6">
+
+        <!-- CABECERA -->
+        <div class="flex flex-wrap items-start justify-between gap-4">
+
+          <div class="min-w-0 flex-1">
+
+            <span class="inline-block rounded-lg bg-yellow-100 px-3 py-1 text-xs font-bold text-yellow-800">
+
+              {{ hamburguesaSeleccionada.categoria }}
+
+            </span>
+
+            <h2 class="mt-3 text-2xl font-black leading-tight">
+
+              {{ hamburguesaSeleccionada.nombre }}
+
+            </h2>
+
+          </div>
+
+
+          <!-- PRECIO -->
+          <div class="text-right">
+
+            <p class="text-3xl font-black text-red-600">
+
+              ${{ hamburguesaSeleccionada.precio.toFixed(2) }}
+
+            </p>
+
+            <p class="text-xs font-bold text-orange-600">
+
+              ${{ precioDescuento(hamburguesaSeleccionada.precio).toFixed(2) }}
+              con Cédula Ing.
+
+            </p>
+
+          </div>
+
+        </div>
+
+
+        <!-- DESCRIPCIÓN -->
+        <p class="mt-5 leading-relaxed text-gray-600">
+
+          {{ hamburguesaSeleccionada.descripcion }}
+
+        </p>
+
+
+        <!-- INGREDIENTES -->
+        <div class="mt-5 rounded-2xl border border-gray-200 bg-gray-50 p-4">
+
+          <p class="mb-3 text-xs font-extrabold tracking-wide text-gray-500">
+
+            ESPECIFICACIÓN TÉCNICA DE INGREDIENTES
+
+          </p>
+
+          <div class="flex flex-wrap gap-2">
+
+            <span
+              *ngFor="let ingrediente of hamburguesaSeleccionada.ingredientes"
+              class="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700">
+
+              {{ ingrediente }}
+
+            </span>
+
+          </div>
+
+        </div>
+
+
+        <!-- BOTONES -->
+        <div class="mt-6 flex flex-wrap justify-end gap-2">
+
+          <button
+            type="button"
+            (click)="cerrarDetalles()"
+            class="h-11 rounded-xl border border-gray-300 px-5 font-bold transition hover:bg-gray-100">
+
+            Cerrar
+
+          </button>
+
+          <button
+            type="button"
+            (click)="agregarAlCarrito(hamburguesaSeleccionada)"
+            class="flex h-11 items-center justify-center gap-2 rounded-xl bg-red-600 px-5 font-extrabold text-white transition hover:bg-red-700">
+
+            🛒 Agregar al Carrito
+
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- ====================================== -->
+  <!-- AVISO AGREGADO AL CARRITO -->
+  <!-- ====================================== -->
+
+  <div
+    *ngIf="mensajeCarrito"
+    class="fixed bottom-5 right-5 z-[110] rounded-2xl bg-[#171717] px-6 py-4 text-white shadow-2xl">
+
+    <p class="font-bold">
+
+      ✓ {{ mensajeCarrito }}
+
+    </p>
+
+  </div>
+
+</div>

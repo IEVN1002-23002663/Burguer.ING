@@ -15,20 +15,21 @@ export class Shell {
   private readonly router = inject(Router);
   menuAbierto = false;
   busqueda = '';
-  readonly links = [
-    { ruta: '/dashboard', titulo: 'Dashboard', icono: 'dashboard' },
-    { ruta: '/usuarios', titulo: 'Usuarios', icono: 'users' },
-    { ruta: '/proveedores', titulo: 'Proveedores', icono: 'truck' },
-    { ruta: '/compras', titulo: 'Compras', icono: 'cart' },
-    { ruta: '/materias-primas', titulo: 'Materias primas', icono: 'box' },
-    { ruta: '/inventario', titulo: 'Inventario', icono: 'warehouse' },
-    // Rutas de tus compañeros: habilitadas, pero con páginas vacías.
-    { ruta: '/productos', titulo: 'Productos', icono: 'shop' },
-    { ruta: '/recetas-produccion', titulo: 'Recetas y producción', icono: 'clipboard' },
-    { ruta: '/pedidos', titulo: 'Pedidos', icono: 'cart' },
-    { ruta: '/ventas', titulo: 'Ventas', icono: 'chart' },
-    { ruta: '/gastos-finanzas', titulo: 'Gastos y finanzas', icono: 'money' }
-  ];
+  
+readonly links = [
+  { ruta: '/admin/dashboard', titulo: 'Dashboard', icono: 'dashboard' },
+  { ruta: '/admin/usuarios', titulo: 'Usuarios', icono: 'users' },
+  { ruta: '/admin/proveedores', titulo: 'Proveedores', icono: 'truck' },
+  { ruta: '/admin/compras', titulo: 'Compras', icono: 'cart' },
+  { ruta: '/admin/materias-primas', titulo: 'Materias primas', icono: 'box' },
+  { ruta: '/admin/inventario', titulo: 'Inventario', icono: 'warehouse' },
+  { ruta: '/admin/productos', titulo: 'Productos', icono: 'shop' },
+  { ruta: '/admin/recetas-produccion', titulo: 'Recetas y producción', icono: 'clipboard' },
+  { ruta: '/admin/pedidos', titulo: 'Pedidos', icono: 'cart' },
+  { ruta: '/admin/ventas', titulo: 'Ventas', icono: 'chart' },
+  { ruta: '/admin/gastos-finanzas', titulo: 'Gastos y finanzas', icono: 'money' }
+];
+
 
   get iniciales(): string {
     const nombre = this.auth.usuario()?.nombre || 'IN';

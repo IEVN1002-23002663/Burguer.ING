@@ -14,6 +14,7 @@ export interface AuthUsuario {
   rol: string;
   nombre: string;
   correo: string;
+  id_cliente?: number | null;
 }
 
 export interface LoginResponse {
