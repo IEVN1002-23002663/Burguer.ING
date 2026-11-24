@@ -1,8 +1,14 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, Router } from '@angular/router';
-import { CarritoService, ItemCarrito } from '../../../core/services/carrito.service';
+import { Subscription } from 'rxjs';
+
+import {
+  CarritoService,
+  ItemCarrito
+} from '../../../core/services/carrito.service';
+
 import { ApiService } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
 
@@ -12,7 +18,7 @@ import { AuthService } from '../../../core/services/auth.service';
   imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './carrito.html'
 })
-export class Carrito {
+export class Carrito implements OnDestroy {
 
   items: ItemCarrito[] = [];
 
@@ -22,7 +28,12 @@ export class Carrito {
 
   mensajeCedula = '';
   mensajePedido = '';
+
   cargandoPedido = false;
+  cargandoAcreditacion = true;
+
+  private carritoSubscription?: Subscription;
+  private acreditacionSubscription?: Subscription;
 
   constructor(
     private carritoService: CarritoService,
@@ -30,10 +41,81 @@ export class Carrito {
     private auth: AuthService,
     private router: Router
   ) {
-    this.carritoService.carrito$.subscribe(items => {
-      this.items = items;
-    });
+    this.carritoSubscription =
+      this.carritoService.carrito$.subscribe(items => {
+        this.items = items;
+      });
+
+    this.consultarAcreditacion();
   }
+
+  ngOnDestroy(): void {
+    this.carritoSubscription?.unsubscribe();
+    this.acreditacionSubscription?.unsubscribe();
+  }
+
+  // ==========================================
+  // CONSULTAR ACREDITACIÓN DEL CLIENTE
+  // ==========================================
+
+  consultarAcreditacion(): void {
+
+    const usuario = this.auth.usuario();
+
+    if (!usuario?.id_cliente) {
+      this.descuentoAplicado = false;
+      this.cargandoAcreditacion = false;
+      return;
+    }
+
+    this.cargandoAcreditacion = true;
+
+    this.acreditacionSubscription?.unsubscribe();
+
+    this.acreditacionSubscription = this.api
+      .get<any>(`/carrito/${usuario.id_cliente}`)
+      .subscribe({
+
+        next: (respuesta) => {
+
+          this.descuentoAplicado =
+            respuesta?.cedula_aprobada === true;
+
+          this.cedulaValidada = this.descuentoAplicado;
+
+          if (this.descuentoAplicado) {
+            this.mensajeCedula =
+              'Tu cédula ya fue aprobada. Tienes activo tu descuento del 15%.';
+          } else {
+            this.mensajeCedula =
+              'Tu acreditación todavía no está aprobada. Consulta su estado en Mi Perfil.';
+          }
+
+          this.cargandoAcreditacion = false;
+        },
+
+        error: (error) => {
+
+          console.error(
+            'Error al consultar la acreditación:',
+            error
+          );
+
+          this.descuentoAplicado = false;
+          this.cedulaValidada = false;
+
+          this.mensajeCedula =
+            'No se pudo consultar tu acreditación. Intenta actualizar la página.';
+
+          this.cargandoAcreditacion = false;
+        }
+
+      });
+  }
+
+  // ==========================================
+  // CANTIDADES Y PRODUCTOS
+  // ==========================================
 
   aumentar(id: number): void {
     this.carritoService.aumentar(id);
@@ -51,13 +133,18 @@ export class Carrito {
   }
 
   vaciar(): void {
+
     this.carritoService.vaciar();
+
     this.mensajePedido = '';
-    this.descuentoAplicado = false;
-    this.cedulaValidada = false;
-    this.cedula = '';
-    this.mensajeCedula = '';
+
+    // No se elimina la acreditación del cliente.
+    // La aprobación permanece guardada en la base de datos.
   }
+
+  // ==========================================
+  // TOTALES
+  // ==========================================
 
   get subtotal(): number {
     return this.carritoService.subtotal;
@@ -68,40 +155,23 @@ export class Carrito {
   }
 
   get descuento(): number {
-    return this.descuentoAplicado ? this.subtotal * 0.15 : 0;
+
+    if (!this.descuentoAplicado) {
+      return 0;
+    }
+
+    return Math.round(
+      (this.subtotal * 0.15 + Number.EPSILON) * 100
+    ) / 100;
   }
 
   get total(): number {
-    return this.subtotal - this.descuento;
+    return Math.max(0, this.subtotal - this.descuento);
   }
 
-  validarCedula(): void {
-    this.mensajeCedula = '';
-    this.cedulaValidada = false;
-    this.descuentoAplicado = false;
-
-    const valor = this.cedula.trim();
-
-    if (!valor) {
-      this.mensajeCedula =
-        'Ingresa tu Cédula Profesional o Título de Ingeniería.';
-      return;
-    }
-
-    if (valor.length < 5) {
-      this.mensajeCedula = 'Ingresa un número de cédula válido.';
-      return;
-    }
-
-    // Validación provisional únicamente visual.
-    // Flask/MySQL realizará el cálculo definitivo.
-
-    this.cedulaValidada = true;
-    this.descuentoAplicado = true;
-
-    this.mensajeCedula =
-      'Validación provisional exitosa. Descuento visual del 15%.';
-  }
+  // ==========================================
+  // CONFIRMAR PEDIDO
+  // ==========================================
 
   confirmarPedido(): void {
 
@@ -114,7 +184,8 @@ export class Carrito {
 
     const usuario = this.auth.usuario();
 
-    if (!usuario || !usuario.id_cliente) {
+    if (!usuario?.id_cliente) {
+
       this.router.navigate(['/login'], {
         queryParams: {
           returnUrl: '/carrito'
@@ -124,9 +195,10 @@ export class Carrito {
       return;
     }
 
-    // En lugar de crear el pedido inmediatamente,
-    // ahora dirigimos al usuario al checkout.
+    // Flask vuelve a comprobar la acreditación
+    // y calcula el descuento definitivo al crear el pedido.
 
     this.router.navigate(['/checkout']);
   }
+
 }

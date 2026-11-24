@@ -1,3 +1,4 @@
+
 export interface Usuario {
   id_usuario: number;
   id_rol: number;
@@ -103,15 +104,31 @@ export interface AlertasResponse {
 }
 
 export interface MovimientosResponse {
-  materia_prima: { id_materia_prima: number; nombre: string; unidad_medida: string };
+  materia_prima: {
+    id_materia_prima: number;
+    nombre: string;
+    unidad_medida: string;
+  };
   movimientos: Movimiento[];
 }
 
 export interface ReporteResumen {
-  ventas: { cantidad: number; monto: number };
-  compras_recibidas: { cantidad: number; monto: number };
-  gastos: { cantidad: number; monto: number };
-  inventario: { materias_primas_stock_bajo: number; valor_estimado: number };
+  ventas: {
+    cantidad: number;
+    monto: number;
+  };
+  compras_recibidas: {
+    cantidad: number;
+    monto: number;
+  };
+  gastos: {
+    cantidad: number;
+    monto: number;
+  };
+  inventario: {
+    materias_primas_stock_bajo: number;
+    valor_estimado: number;
+  };
   diferencia_referencial: number;
   nota: string;
 }
@@ -124,4 +141,7 @@ export interface VentaDia {
   total: number;
 }
 
-export interface ApiMensaje { mensaje: string; [key: string]: unknown; }
+export interface ApiMensaje {
+  mensaje: string;
+  [key: string]: unknown;
+}

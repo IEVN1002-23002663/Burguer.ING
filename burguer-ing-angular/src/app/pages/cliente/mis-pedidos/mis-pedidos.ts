@@ -1,15 +1,25 @@
+import {
+  Component,
+  inject,
+  OnDestroy
+} from '@angular/core';
 
-import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ApiService } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { interval, Subscription } from 'rxjs';
 
 interface Pedido {
   id: number;
   fecha: string;
   productos: string[];
   total: number;
-  estado: 'Pendiente' | 'En preparación' | 'Listo para recoger' | 'Entregado';
+  estado:
+    | 'Pendiente'
+    | 'En preparación'
+    | 'Listo para recoger'
+    | 'Entregado'
+    | 'Cancelado';
   tipoEntrega: string;
 }
 
@@ -19,10 +29,12 @@ interface Pedido {
   imports: [CommonModule],
   templateUrl: './mis-pedidos.html'
 })
-export class MisPedidos {
+export class MisPedidos implements OnDestroy {
 
   private readonly api = inject(ApiService);
   private readonly auth = inject(AuthService);
+
+  private actualizacionSubscription?: Subscription;
 
   pedidos: Pedido[] = [];
   cargando = true;
@@ -35,15 +47,28 @@ export class MisPedidos {
     'Pendiente',
     'En preparación',
     'Listo para recoger',
-    'Entregado'
+    'Entregado',
+    'Cancelado'
   ];
 
   constructor() {
     this.cargarPedidos();
+
+    // Actualiza los pedidos automáticamente cada 10 segundos.
+    this.actualizacionSubscription = interval(10000).subscribe(() => {
+      this.cargarPedidos(false);
+    });
   }
 
-  cargarPedidos(): void {
-    this.cargando = true;
+  ngOnDestroy(): void {
+    this.actualizacionSubscription?.unsubscribe();
+  }
+
+  cargarPedidos(mostrarCarga: boolean = true): void {
+    if (mostrarCarga) {
+      this.cargando = true;
+    }
+
     this.error = '';
 
     const usuario = this.auth.usuario();
@@ -54,7 +79,10 @@ export class MisPedidos {
       return;
     }
 
-    this.api.get<any>(`/pedidos/cliente/${usuario.id_cliente}`).subscribe({
+    this.api.get<any>(
+      `/pedidos/cliente/${usuario.id_cliente}`
+    ).subscribe({
+
       next: (respuesta) => {
         console.log('Respuesta de pedidos:', respuesta);
 
@@ -65,8 +93,8 @@ export class MisPedidos {
             respuesta?.resultado ??
             [];
 
-        this.pedidos = lista.map((pedido: any) =>
-          this.mapearPedido(pedido)
+        this.pedidos = lista.map(
+          (pedido: any) => this.mapearPedido(pedido)
         );
 
         this.cargando = false;
@@ -74,6 +102,7 @@ export class MisPedidos {
 
       error: (error) => {
         console.error('Error al cargar pedidos:', error);
+
         this.error = 'No se pudieron cargar tus pedidos.';
         this.cargando = false;
       }
@@ -172,6 +201,10 @@ export class MisPedidos {
 
     const valor = (estado ?? '').toLowerCase().trim();
 
+    if (valor.includes('cancel')) {
+      return 'Cancelado';
+    }
+
     if (valor.includes('prepar')) {
       return 'En preparación';
     }
@@ -180,7 +213,10 @@ export class MisPedidos {
       return 'Listo para recoger';
     }
 
-    if (valor.includes('entregado') || valor.includes('completado')) {
+    if (
+      valor.includes('entregado') ||
+      valor.includes('completado')
+    ) {
       return 'Entregado';
     }
 
@@ -225,6 +261,18 @@ export class MisPedidos {
     ).length;
   }
 
+  get pedidosEntregados(): number {
+    return this.pedidos.filter(
+      p => p.estado === 'Entregado'
+    ).length;
+  }
+
+  get pedidosCancelados(): number {
+    return this.pedidos.filter(
+      p => p.estado === 'Cancelado'
+    ).length;
+  }
+
   // FILTRO
 
   get pedidosFiltrados(): Pedido[] {
@@ -260,6 +308,9 @@ export class MisPedidos {
       case 'Entregado':
         return 'bg-zinc-100 text-zinc-700 border-zinc-200';
 
+      case 'Cancelado':
+        return 'bg-red-100 text-red-800 border-red-200';
+
       default:
         return 'bg-zinc-100 text-zinc-700 border-zinc-200';
     }
@@ -282,6 +333,9 @@ export class MisPedidos {
 
       case 'Entregado':
         return '✅';
+
+      case 'Cancelado':
+        return '❌';
 
       default:
         return '📦';

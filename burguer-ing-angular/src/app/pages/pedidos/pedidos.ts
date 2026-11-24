@@ -1,9 +1,9 @@
-
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { ApiService } from '../../core/services/api.service';
+import { AuthService } from '../../core/services/auth.service';
 
 import {
   Carrito,
@@ -17,6 +17,7 @@ import {
 import { mensajeError } from '../../shared/errors';
 import { Icon } from '../../shared/icon';
 
+
 interface DireccionForm {
   calle: string;
   numero: string;
@@ -24,6 +25,7 @@ interface DireccionForm {
   codigo_postal: string;
   referencias: string;
 }
+
 
 @Component({
   selector: 'app-pedidos',
@@ -34,6 +36,8 @@ interface DireccionForm {
 export class PedidosPendiente implements OnInit {
 
   private readonly api = inject(ApiService);
+  private readonly auth = inject(AuthService);
+
 
   // =========================================
   // DATOS DEL MÓDULO
@@ -49,6 +53,7 @@ export class PedidosPendiente implements OnInit {
   carrito: Carrito | null = null;
   detalle: PedidoDetalle | null = null;
 
+
   // =========================================
   // SELECCIÓN DE CLIENTE Y PRODUCTO
   // =========================================
@@ -62,11 +67,11 @@ export class PedidosPendiente implements OnInit {
   busqueda = '';
   filtroEstado = 'Todos';
 
+
   // =========================================
   // DATOS DE ENTREGA
   // =========================================
 
-  // Flask admite "Recoger" y "Domicilio".
   tipoEntrega: 'Recoger' | 'Domicilio' = 'Recoger';
 
   idDireccion: number | null = null;
@@ -75,6 +80,7 @@ export class PedidosPendiente implements OnInit {
   creandoDireccion = false;
 
   nuevaDireccion: DireccionForm = this.direccionVacia();
+
 
   // =========================================
   // ESTADOS DE INTERFAZ
@@ -88,6 +94,38 @@ export class PedidosPendiente implements OnInit {
   error = '';
   mensaje = '';
 
+
+  // =========================================
+  // ESTADOS DE PEDIDOS
+  // =========================================
+
+  readonly estadosPedido = [
+    'Pendiente',
+    'En preparación',
+    'Listo para recoger',
+    'Entregado',
+    'Cancelado'
+  ];
+
+  estadoSeleccionado = '';
+
+  readonly transicionesEstado: Record<string, string[]> = {
+    'Pendiente': [
+      'En preparación',
+      'Cancelado'
+    ],
+    'En preparación': [
+      'Listo para recoger',
+      'Cancelado'
+    ],
+    'Listo para recoger': [
+      'Entregado'
+    ],
+    'Entregado': [],
+    'Cancelado': []
+  };
+
+
   // =========================================
   // INICIALIZACIÓN
   // =========================================
@@ -99,6 +137,7 @@ export class PedidosPendiente implements OnInit {
     this.consultarCliente();
   }
 
+
   private direccionVacia(): DireccionForm {
     return {
       calle: '',
@@ -108,6 +147,7 @@ export class PedidosPendiente implements OnInit {
       referencias: ''
     };
   }
+
 
   // =========================================
   // CLIENTE SELECCIONADO
@@ -119,6 +159,7 @@ export class PedidosPendiente implements OnInit {
       c => c.id_cliente === this.idCliente
     );
   }
+
 
   // =========================================
   // DESCUENTO ESTIMADO
@@ -139,6 +180,7 @@ export class PedidosPendiente implements OnInit {
       Number(cliente.porcentaje_descuento || 0) / 100;
   }
 
+
   get totalEstimado(): number {
 
     return Math.max(
@@ -147,6 +189,7 @@ export class PedidosPendiente implements OnInit {
       this.descuentoEstimado
     );
   }
+
 
   // =========================================
   // ESTADOS DISPONIBLES
@@ -158,6 +201,21 @@ export class PedidosPendiente implements OnInit {
       this.todosPedidos.map(p => p.estado)
     )].sort();
   }
+
+
+  // =========================================
+  // ESTADOS PERMITIDOS PARA EL PEDIDO
+  // =========================================
+
+  get estadosDisponibles(): string[] {
+
+    if (!this.detalle) {
+      return [];
+    }
+
+    return this.transicionesEstado[this.detalle.estado] || [];
+  }
+
 
   // =========================================
   // FILTRO DE PEDIDOS
@@ -187,6 +245,7 @@ export class PedidosPendiente implements OnInit {
     });
   }
 
+
   // =========================================
   // CONSULTAR PRODUCTOS DISPONIBLES
   // =========================================
@@ -211,6 +270,7 @@ export class PedidosPendiente implements OnInit {
     });
   }
 
+
   // =========================================
   // CONSULTAR CLIENTES
   // =========================================
@@ -226,15 +286,12 @@ export class PedidosPendiente implements OnInit {
       },
 
       error: () => {
-
-        // Si todavía no existe la ruta administrativa
-        // en Flask, permite seleccionar por ID.
-
         this.clientes = [];
       }
 
     });
   }
+
 
   // =========================================
   // LISTAR TODOS LOS PEDIDOS
@@ -261,9 +318,6 @@ export class PedidosPendiente implements OnInit {
         this.listadoGeneralDisponible = false;
         this.cargando = false;
 
-        // El Flask original solo listaba
-        // pedidos de un cliente específico.
-
         if (err.status === 404 || err.status === 405) {
 
           this.cargarPedidosCliente();
@@ -277,6 +331,7 @@ export class PedidosPendiente implements OnInit {
 
     });
   }
+
 
   // =========================================
   // CAMBIAR CLIENTE
@@ -309,6 +364,7 @@ export class PedidosPendiente implements OnInit {
     }
   }
 
+
   // =========================================
   // PEDIDOS DE UN CLIENTE
   // =========================================
@@ -333,6 +389,7 @@ export class PedidosPendiente implements OnInit {
 
     });
   }
+
 
   // =========================================
   // CONSULTAR CARRITO
@@ -359,6 +416,7 @@ export class PedidosPendiente implements OnInit {
     });
   }
 
+
   // =========================================
   // CONSULTAR DIRECCIONES
   // =========================================
@@ -383,6 +441,7 @@ export class PedidosPendiente implements OnInit {
 
     });
   }
+
 
   // =========================================
   // GUARDAR DIRECCIÓN NUEVA
@@ -433,6 +492,7 @@ export class PedidosPendiente implements OnInit {
     });
   }
 
+
   // =========================================
   // AGREGAR PRODUCTO AL CARRITO
   // =========================================
@@ -479,6 +539,7 @@ export class PedidosPendiente implements OnInit {
 
     });
   }
+
 
   // =========================================
   // CAMBIAR CANTIDAD DEL CARRITO
@@ -527,6 +588,7 @@ export class PedidosPendiente implements OnInit {
     });
   }
 
+
   // =========================================
   // QUITAR PRODUCTO DEL CARRITO
   // =========================================
@@ -559,6 +621,7 @@ export class PedidosPendiente implements OnInit {
 
     });
   }
+
 
   // =========================================
   // CONFIRMAR PEDIDO
@@ -644,6 +707,7 @@ export class PedidosPendiente implements OnInit {
     });
   }
 
+
   // =========================================
   // VER DETALLE DE PEDIDO
   // =========================================
@@ -657,7 +721,9 @@ export class PedidosPendiente implements OnInit {
     ).subscribe({
 
       next: respuesta => {
+
         this.detalle = respuesta;
+        this.estadoSeleccionado = respuesta.estado;
       },
 
       error: err => {
@@ -666,6 +732,134 @@ export class PedidosPendiente implements OnInit {
 
     });
   }
+
+
+  // =========================================
+  // OBTENER ID DEL USUARIO ADMINISTRADOR
+  // =========================================
+
+  private obtenerIdUsuarioSesion(): number | null {
+
+    const usuario = this.auth.usuario();
+
+    const idUsuario = Number(usuario?.id_usuario);
+
+    if (
+      !Number.isInteger(idUsuario) ||
+      idUsuario <= 0
+    ) {
+      return null;
+    }
+
+    return idUsuario;
+  }
+
+
+  // =========================================
+  // ACTUALIZAR ESTADO DEL PEDIDO
+  // =========================================
+
+  actualizarEstadoPedido(): void {
+
+    if (!this.detalle) {
+      this.error = 'Primero selecciona un pedido.';
+      return;
+    }
+
+    if (!this.estadoSeleccionado) {
+      this.error = 'Selecciona un estado.';
+      return;
+    }
+
+    const estadoActual = this.detalle.estado;
+    const nuevoEstado = this.estadoSeleccionado;
+
+    if (estadoActual === nuevoEstado) {
+      this.error = 'El pedido ya tiene ese estado.';
+      return;
+    }
+
+    const estadosPermitidos =
+      this.transicionesEstado[estadoActual] || [];
+
+    if (!estadosPermitidos.includes(nuevoEstado)) {
+      this.error = 'No se permite realizar ese cambio de estado.';
+      return;
+    }
+
+    const idUsuario = this.obtenerIdUsuarioSesion();
+
+    if (!idUsuario) {
+      this.error =
+        'No se pudo identificar al usuario de la sesión.';
+
+      return;
+    }
+
+    const confirmado = confirm(
+      `¿Deseas cambiar el estado del pedido #${this.detalle.id_pedido} ` +
+      `de "${estadoActual}" a "${nuevoEstado}"?`
+    );
+
+    if (!confirmado) {
+      this.estadoSeleccionado = estadoActual;
+      return;
+    }
+
+    this.procesando = true;
+    this.error = '';
+    this.mensaje = '';
+
+    this.api.put<{
+      mensaje: string;
+      id_pedido: number;
+      estado_anterior: string;
+      estado: string;
+    }>(
+      `/pedidos/${this.detalle.id_pedido}/estado`,
+      {
+        estado: nuevoEstado,
+        id_usuario: idUsuario
+      }
+    ).subscribe({
+
+      next: respuesta => {
+
+        this.procesando = false;
+        this.mensaje = respuesta.mensaje;
+
+        if (this.detalle) {
+          this.detalle.estado = respuesta.estado;
+        }
+
+        this.todosPedidos = this.todosPedidos.map(pedido => {
+
+          if (pedido.id_pedido === respuesta.id_pedido) {
+            return {
+              ...pedido,
+              estado: respuesta.estado
+            };
+          }
+
+          return pedido;
+        });
+
+        this.verPedido(respuesta.id_pedido);
+        this.cargarTodos();
+
+      },
+
+      error: err => {
+
+        this.procesando = false;
+        this.estadoSeleccionado = estadoActual;
+        this.error = mensajeError(err);
+
+      }
+
+    });
+  }
+
 
   // =========================================
   // BUSCAR PEDIDO POR FOLIO
@@ -685,6 +879,7 @@ export class PedidosPendiente implements OnInit {
     this.verPedido(this.idPedidoBuscar);
   }
 
+
   // =========================================
   // ACTUALIZAR MÓDULO
   // =========================================
@@ -697,4 +892,5 @@ export class PedidosPendiente implements OnInit {
     this.cargarCarrito();
     this.cargarProductos();
   }
+
 }

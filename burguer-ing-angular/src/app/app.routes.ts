@@ -1,6 +1,6 @@
 
 import { Routes } from '@angular/router';
-import { authGuard } from './core/guards/auth.guard';
+import { authGuard, rolGuard } from './core/guards/auth.guard';
 
 import { Shell } from './layout/shell';
 import { Login } from './pages/login/login';
@@ -28,15 +28,17 @@ import { Registro } from './pages/registro/registro';
 
 export const routes: Routes = [
 
-  // LOGIN
+  // LOGIN Y REGISTRO
   { path: 'login', component: Login },
   { path: 'registro', component: Registro },
 
+  // ======================================
   // PANEL ADMINISTRATIVO
+  // ======================================
   {
     path: 'admin',
     component: Shell,
-    canActivate: [authGuard],
+    canActivate: [authGuard, rolGuard(['Administrador'])],
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
       { path: 'dashboard', component: Dashboard },
@@ -53,7 +55,25 @@ export const routes: Routes = [
     ]
   },
 
+  // ======================================
+  // PANEL DE EMPLEADOS
+  // ======================================
+  {
+    path: 'empleado',
+    component: Shell,
+    canActivate: [authGuard, rolGuard(['Empleado'])],
+    children: [
+      { path: '', pathMatch: 'full', redirectTo: 'pedidos' },
+      { path: 'materias-primas', component: MateriasPrimas },
+      { path: 'inventario', component: Inventario },
+      { path: 'productos', component: ProductosPendiente },
+      { path: 'pedidos', component: PedidosPendiente }
+    ]
+  },
+
+  // ======================================
   // REDIRECCIONES ADMINISTRATIVAS ANTIGUAS
+  // ======================================
   { path: 'dashboard', redirectTo: 'admin/dashboard', pathMatch: 'full' },
   { path: 'usuarios', redirectTo: 'admin/usuarios', pathMatch: 'full' },
   { path: 'proveedores', redirectTo: 'admin/proveedores', pathMatch: 'full' },
@@ -66,7 +86,9 @@ export const routes: Routes = [
   { path: 'ventas', redirectTo: 'admin/ventas', pathMatch: 'full' },
   { path: 'gastos-finanzas', redirectTo: 'admin/gastos-finanzas', pathMatch: 'full' },
 
+  // ======================================
   // PÁGINAS PÚBLICAS DEL CLIENTE
+  // ======================================
   {
     path: '',
     component: LayoutCliente,
@@ -83,10 +105,9 @@ export const routes: Routes = [
       },
 
       { path: 'mis-pedidos', component: MisPedidos },
-
       { path: 'mi-perfil', component: MiPerfil },
       { path: 'carrito', component: Carrito },
-      { path: 'checkout', component: Checkout },
+      { path: 'checkout', component: Checkout }
     ]
   },
 

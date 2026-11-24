@@ -431,6 +431,19 @@
 
           </div>
 
+          <!-- DESCUENTO -->
+          <div
+            *ngIf="descuentoAplicado"
+            class="mb-4 flex justify-between text-sm text-gray-600">
+
+            <span>Descuento (15%)</span>
+
+            <strong class="text-green-700">
+              -{{ descuento | currency:'MXN':'symbol':'1.2-2' }}
+            </strong>
+
+          </div>
+
           <!-- ENVÍO -->
           <div class="mb-5 flex justify-between text-sm text-gray-600">
 

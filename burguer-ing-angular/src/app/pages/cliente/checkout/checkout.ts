@@ -26,9 +26,17 @@ interface RespuestaDirecciones {
   direcciones?: DireccionCheckout[];
 }
 
+interface RespuestaAcreditacion {
+  cedula_aprobada?: boolean;
+}
+
 interface RespuestaPedido {
   id_pedido: number;
   total: number;
+  subtotal?: number;
+  porcentaje_descuento?: number;
+  monto_descuento?: number;
+  costo_entrega?: number;
   mensaje?: string;
 }
 
@@ -45,6 +53,7 @@ export class Checkout implements OnInit {
   // ==========================================
 
   readonly COSTO_ENVIO = 50;
+  readonly PORCENTAJE_DESCUENTO = 15;
 
   // ==========================================
   // DATOS DEL CLIENTE
@@ -55,6 +64,14 @@ export class Checkout implements OnInit {
 
   cargandoPerfil = false;
   mensajePerfil = '';
+
+  // ==========================================
+  // ACREDITACIÓN Y DESCUENTO
+  // ==========================================
+
+  descuentoAplicado = false;
+  cargandoAcreditacion = true;
+  mensajeAcreditacion = '';
 
   // ==========================================
   // DIRECCIONES GUARDADAS
@@ -133,14 +150,68 @@ export class Checkout implements OnInit {
       return;
     }
 
-    // Nombre inicial desde la sesión.
     this.nombre = usuario.nombre || '';
 
-    // Cargar información del cliente.
     this.cargarPerfil(usuario.id_cliente);
 
-    // Cargar direcciones guardadas.
     this.cargarDirecciones(usuario.id_cliente);
+
+    // Consultar si la cédula ya fue aprobada.
+    this.consultarAcreditacion(usuario.id_cliente);
+
+  }
+
+  // ==========================================
+  // CONSULTAR ACREDITACIÓN
+  // ==========================================
+
+  consultarAcreditacion(idCliente: number): void {
+
+    this.cargandoAcreditacion = true;
+    this.mensajeAcreditacion = '';
+
+    this.api.get<RespuestaAcreditacion>(
+      `/carrito/${idCliente}`
+    ).subscribe({
+
+      next: (respuesta) => {
+
+        this.descuentoAplicado =
+          respuesta?.cedula_aprobada === true;
+
+        if (this.descuentoAplicado) {
+
+          this.mensajeAcreditacion =
+            'Tu cédula está aprobada. Se aplicó tu descuento del 15%.';
+
+        } else {
+
+          this.mensajeAcreditacion =
+            'No tienes una acreditación aprobada.';
+
+        }
+
+        this.cargandoAcreditacion = false;
+
+      },
+
+      error: (error) => {
+
+        console.error(
+          'Error al consultar acreditación:',
+          error
+        );
+
+        this.descuentoAplicado = false;
+
+        this.mensajeAcreditacion =
+          'No se pudo consultar tu acreditación.';
+
+        this.cargandoAcreditacion = false;
+
+      }
+
+    });
 
   }
 
@@ -151,6 +222,28 @@ export class Checkout implements OnInit {
   get subtotal(): number {
 
     return this.carritoService.subtotal;
+
+  }
+
+  // ==========================================
+  // CANTIDAD DE PRODUCTOS
+  // ==========================================
+
+  // cantidadTotal se actualiza mediante carrito$.
+
+  // ==========================================
+  // MONTO DEL DESCUENTO
+  // ==========================================
+
+  get descuento(): number {
+
+    if (!this.descuentoAplicado) {
+      return 0;
+    }
+
+    return Number(
+      (this.subtotal * this.PORCENTAJE_DESCUENTO / 100).toFixed(2)
+    );
 
   }
 
@@ -173,7 +266,11 @@ export class Checkout implements OnInit {
   get total(): number {
 
     return Number(
-      (this.subtotal + this.costoEntrega).toFixed(2)
+      (
+        this.subtotal -
+        this.descuento +
+        this.costoEntrega
+      ).toFixed(2)
     );
 
   }
@@ -263,7 +360,6 @@ export class Checkout implements OnInit {
 
         }
 
-        // Seleccionar automáticamente si solo hay una dirección.
         if (this.direcciones.length === 1) {
 
           this.idDireccionSeleccionada =
@@ -327,7 +423,6 @@ export class Checkout implements OnInit {
 
     const idCliente = usuario.id_cliente;
 
-    // Validar carrito.
     if (this.cantidadTotal === 0) {
 
       this.mensaje = 'Tu carrito está vacío.';
@@ -335,7 +430,6 @@ export class Checkout implements OnInit {
 
     }
 
-    // Validar carga del perfil.
     if (this.cargandoPerfil) {
 
       this.mensaje =
@@ -354,7 +448,19 @@ export class Checkout implements OnInit {
 
     }
 
-    // Validar direcciones.
+    if (this.cargandoAcreditacion) {
+
+      this.mensaje =
+        'Espera a que se consulte tu acreditación.';
+
+      return;
+
+    }
+
+    // ======================================
+    // VALIDAR DIRECCIONES
+    // ======================================
+
     if (this.tipoEntrega === 'Domicilio') {
 
       if (this.cargandoDirecciones) {
@@ -401,7 +507,10 @@ export class Checkout implements OnInit {
 
     }
 
-    // Validar datos de pago de demostración.
+    // ======================================
+    // VALIDAR DATOS DE PAGO DE DEMOSTRACIÓN
+    // ======================================
+
     if (
       !this.titularTarjeta.trim() ||
       this.numeroTarjeta.replace(/\s/g, '').length < 16 ||
@@ -420,6 +529,7 @@ export class Checkout implements OnInit {
 
     // Simulación de pago.
     // No se realiza ningún cobro bancario real.
+
     setTimeout(() => {
 
       const aprobado = Math.random() < 0.85;
@@ -474,7 +584,7 @@ export class Checkout implements OnInit {
 
         this.numeroPedido = respuesta.id_pedido;
 
-        // Utilizar el total definitivo del backend.
+        // El total definitivo siempre viene de Flask.
         this.totalPedido = Number(
           respuesta.total ?? this.total
         );

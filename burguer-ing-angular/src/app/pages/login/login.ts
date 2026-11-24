@@ -1,3 +1,4 @@
+
 import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
@@ -43,27 +44,41 @@ export class Login {
           .toLowerCase()
           .trim();
 
+        // ======================================
         // ADMINISTRADOR
+        // ======================================
+
         if (
-          rol.includes('admin') ||
-          rol.includes('administrador')
+          rol === 'administrador' ||
+          rol === 'admin'
         ) {
           void this.router.navigateByUrl('/admin/dashboard');
           return;
         }
 
+        // ======================================
+        // EMPLEADO
+        // ======================================
+
+        if (rol === 'empleado') {
+          void this.router.navigateByUrl('/empleado/pedidos');
+          return;
+        }
+
+        // ======================================
         // CLIENTE
-        if (rol.includes('cliente')) {
+        // ======================================
+
+        if (rol === 'cliente') {
 
           const returnUrl =
             this.route.snapshot.queryParamMap.get('returnUrl');
 
-          // Solo permitir destinos internos válidos
-          // y evitar redirigir clientes al panel administrativo.
           if (
             returnUrl &&
             returnUrl.startsWith('/') &&
-            !returnUrl.startsWith('/admin')
+            !returnUrl.startsWith('/admin') &&
+            !returnUrl.startsWith('/empleado')
           ) {
             void this.router.navigateByUrl(returnUrl);
           } else {
@@ -72,6 +87,12 @@ export class Login {
 
           return;
         }
+
+        // ======================================
+        // ROL NO RECONOCIDO
+        // ======================================
+
+        this.auth.cerrar();
 
         this.error =
           `Inicio de sesión exitoso, pero no se reconoció el rol: ${respuesta.usuario.rol}`;

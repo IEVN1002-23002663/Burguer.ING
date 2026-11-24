@@ -1,56 +1,655 @@
-  <div class="page-header">
-    <div><h1 class="page-title">Usuarios y Roles</h1><p class="page-subtitle">Administración de accesos para administradores, personal y clientes.</p></div>
-    <button class="btn btn-red" (click)="abrirCrear()"><app-icon name="plus" [size]="17" /> Agregar Usuario</button>
+
+<!-- ========================================== -->
+<!-- ENCABEZADO PRINCIPAL -->
+<!-- ========================================== -->
+
+<div class="page-header">
+
+  <div>
+    <h1 class="page-title">
+      Usuarios y Roles
+    </h1>
+
+    <p class="page-subtitle">
+      Administración de accesos para administradores, personal y clientes.
+    </p>
   </div>
-  @if (mensaje) { <div class="notice notice-ok mb-4">{{mensaje}}</div> }
-  @if (error) { <div class="notice notice-error mb-4">{{error}}</div> }
-  <div class="panel p-4 mb-6 flex flex-wrap justify-between items-center gap-4">
-    <div class="relative w-full max-w-[350px]">
-      <app-icon name="search" [size]="16" class="absolute left-3 top-3 text-zinc-400" />
-      <input class="search-input" [(ngModel)]="filtro" placeholder="Buscar por nombre o correo..." aria-label="Buscar usuarios" />
-    </div>
-    <div class="filter-row">
-      @for (rol of filtrosRoles; track rol) {
-        <button type="button" class="filter-pill" [class.selected]="rolSeleccionado===rol" (click)="rolSeleccionado=rol">{{rol}}</button>
+
+  <button
+    class="btn btn-red"
+    (click)="abrirCrear()">
+
+    <app-icon name="plus" [size]="17" />
+
+    Agregar Usuario
+
+  </button>
+
+</div>
+
+
+<!-- ========================================== -->
+<!-- MENSAJES GENERALES -->
+<!-- ========================================== -->
+
+@if (mensaje) {
+
+  <div class="notice notice-ok mb-4">
+    {{ mensaje }}
+  </div>
+
+}
+
+@if (error) {
+
+  <div class="notice notice-error mb-4">
+    {{ error }}
+  </div>
+
+}
+
+
+<!-- ========================================== -->
+<!-- VERIFICACIÓN DE CÉDULAS -->
+<!-- ========================================== -->
+
+<div class="page-header mt-8">
+
+  <div>
+
+    <h2 class="page-title">
+      Verificación de cédulas
+    </h2>
+
+    <p class="page-subtitle">
+      Revisa las acreditaciones profesionales de tus clientes.
+    </p>
+
+  </div>
+
+  <div class="flex items-center gap-2">
+
+    <span class="chip chip-yellow">
+      {{ acreditacionesPendientes }} pendientes
+    </span>
+
+    <button
+      type="button"
+      class="btn btn-outline"
+      (click)="cargarAcreditaciones()"
+      [disabled]="cargandoAcreditaciones">
+
+      {{ cargandoAcreditaciones ? 'Actualizando...' : 'Actualizar' }}
+
+    </button>
+
+  </div>
+
+</div>
+
+
+<!-- ERROR DE ACREDITACIONES -->
+
+@if (errorAcreditaciones) {
+
+  <div class="notice notice-error mb-4">
+    {{ errorAcreditaciones }}
+  </div>
+
+}
+
+
+<!-- TABLA DE ACREDITACIONES -->
+
+<div class="panel data-table-wrap mb-8">
+
+  <table class="data-table">
+
+    <thead>
+
+      <tr>
+
+        <th>Cliente</th>
+
+        <th>Correo electrónico</th>
+
+        <th>Tipo de acreditación</th>
+
+        <th>Folio de cédula</th>
+
+        <th>Estado</th>
+
+        <th>Fecha de revisión</th>
+
+        <th class="text-right">
+          Acciones
+        </th>
+
+      </tr>
+
+    </thead>
+
+    <tbody>
+
+      @for (a of acreditaciones; track a.id_cliente) {
+
+        <tr>
+
+          <!-- CLIENTE -->
+
+          <td class="font-bold text-zinc-900">
+            {{ a.nombre }}
+          </td>
+
+          <!-- CORREO -->
+
+          <td>
+            {{ a.correo }}
+          </td>
+
+          <!-- TIPO -->
+
+          <td>
+            {{ a.tipo_acreditacion || 'No especificado' }}
+          </td>
+
+          <!-- FOLIO -->
+
+          <td class="font-semibold">
+            {{ a.folio_acreditacion }}
+          </td>
+
+          <!-- ESTADO -->
+
+          <td>
+
+            <span
+              class="chip"
+              [class.chip-yellow]="a.estado_acreditacion === 'Sin acreditar'"
+              [class.chip-green]="a.estado_acreditacion === 'Aprobada'"
+              [class.chip-red]="a.estado_acreditacion === 'Denegada'">
+
+              {{ a.estado_acreditacion }}
+
+            </span>
+
+          </td>
+
+          <!-- FECHA -->
+
+          <td class="text-zinc-500">
+
+            {{ a.fecha_validacion?.slice(0, 10) || 'Sin revisar' }}
+
+          </td>
+
+          <!-- ACCIONES -->
+
+          <td>
+
+            <div class="actions-inline">
+
+              @if (a.estado_acreditacion !== 'Aprobada') {
+
+                <button
+                  type="button"
+                  class="table-action text-emerald-600"
+                  title="Aprobar cédula"
+                  aria-label="Aprobar cédula"
+                  [disabled]="procesandoAcreditacion !== null"
+                  (click)="validarAcreditacion(a, 'Aprobada')">
+
+                  <app-icon name="check" [size]="17" />
+
+                </button>
+
+              }
+
+              @if (a.estado_acreditacion !== 'Denegada') {
+
+                <button
+                  type="button"
+                  class="table-action text-red-600"
+                  title="Denegar cédula"
+                  aria-label="Denegar cédula"
+                  [disabled]="procesandoAcreditacion !== null"
+                  (click)="validarAcreditacion(a, 'Denegada')">
+
+                  <app-icon name="close" [size]="17" />
+
+                </button>
+
+              }
+
+              @if (procesandoAcreditacion === a.id_cliente) {
+
+                <span class="text-xs text-zinc-500">
+                  Procesando...
+                </span>
+
+              }
+
+            </div>
+
+          </td>
+
+        </tr>
+
+      } @empty {
+
+        <tr>
+
+          <td colspan="7" class="text-center text-zinc-400 p-10">
+
+            @if (cargandoAcreditaciones) {
+
+              Cargando acreditaciones...
+
+            } @else {
+
+              No hay clientes con cédulas registradas.
+
+            }
+
+          </td>
+
+        </tr>
+
       }
-    </div>
+
+    </tbody>
+
+  </table>
+
+</div>
+
+
+<!-- ========================================== -->
+<!-- ADMINISTRACIÓN ORIGINAL DE USUARIOS -->
+<!-- ========================================== -->
+
+<div class="panel p-4 mb-6 flex flex-wrap justify-between items-center gap-4">
+
+  <!-- BUSCADOR -->
+
+  <div class="relative w-full max-w-[350px]">
+
+    <app-icon
+      name="search"
+      [size]="16"
+      class="absolute left-3 top-3 text-zinc-400" />
+
+    <input
+      class="search-input"
+      [(ngModel)]="filtro"
+      placeholder="Buscar por nombre o correo..."
+      aria-label="Buscar usuarios" />
+
   </div>
-  <div class="panel data-table-wrap">
-    <table class="data-table">
-      <thead><tr><th>Usuario</th><th>Correo electrónico</th><th>Rol</th><th>Estado</th><th>Registro</th><th class="text-right">Acciones</th></tr></thead>
-      <tbody>
-        @for (u of usuariosFiltrados; track u.id_usuario) {
-          <tr>
-            <td class="font-bold text-zinc-900">{{u.nombre}}</td><td>{{u.correo}}</td>
-            <td><span class="chip" [class.chip-red]="u.rol==='Administrador'" [class.chip-yellow]="u.rol==='Empleado'" [class.chip-blue]="u.rol==='Cliente'">{{u.rol}}</span></td>
-            <td><span class="chip" [class.chip-green]="u.estado===1" [class.chip-gray]="u.estado===0">{{u.estado===1?'Activo':'Inactivo'}}</span></td>
-            <td class="text-zinc-500">{{u.fecha_registro?.slice(0,10)}}</td>
-            <td><div class="actions-inline">
-              <button class="table-action" (click)="abrirEditar(u)" title="Editar usuario" aria-label="Editar usuario"><app-icon name="edit" [size]="17" /></button>
-              <button class="table-action" (click)="cambiarEstado(u)" [title]="u.estado===1?'Desactivar':'Activar'" [attr.aria-label]="u.estado===1?'Desactivar usuario':'Activar usuario'"><app-icon [name]="u.estado===1?'close':'check'" [size]="17" /></button>
-            </div></td>
-          </tr>
-        } @empty { <tr><td colspan="6" class="text-center text-zinc-400 p-10">{{cargando?'Cargando usuarios...':'No se encontraron usuarios.'}}</td></tr> }
-      </tbody>
-    </table>
+
+
+  <!-- FILTROS DE ROLES -->
+
+  <div class="filter-row">
+
+    @for (rol of filtrosRoles; track rol) {
+
+      <button
+        type="button"
+        class="filter-pill"
+        [class.selected]="rolSeleccionado === rol"
+        (click)="rolSeleccionado = rol">
+
+        {{ rol }}
+
+      </button>
+
+    }
+
   </div>
-  @if (modalAbierto) {
-    <div class="modal-backdrop" (click)="cerrarModal()">
-      <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="usuario-title" (click)="$event.stopPropagation()">
-        <div class="modal-header"><h2 id="usuario-title" class="panel-title">{{editandoId?'Editar usuario':'Agregar usuario'}}</h2><button (click)="cerrarModal()" aria-label="Cerrar"><app-icon name="close" [size]="19" /></button></div>
-        <form (ngSubmit)="guardar()">
-          <div class="modal-body space-y-4">
-            @if (errorModal) { <div class="notice notice-error">{{errorModal}}</div> }
-            <div class="form-field"><label>Nombre completo *</label><input class="form-control" [(ngModel)]="form.nombre" name="nombre" maxlength="100" required /></div>
-            <div class="form-field"><label>Correo electrónico *</label><input class="form-control" type="email" [(ngModel)]="form.correo" name="correo" maxlength="120" required /></div>
-            <div class="form-field"><label>Rol *</label><select class="form-control" [(ngModel)]="form.id_rol" name="id_rol" required>
-              <option [ngValue]="1">Administrador</option><option [ngValue]="2">Empleado</option><option [ngValue]="3">Cliente</option>
-            </select></div>
-            @if (form.id_rol===3) { <div class="alert-banner">El endpoint actual crea la cuenta de usuario. Para pedidos del cliente también será necesario un registro relacionado en la tabla <code>clientes</code>.</div> }
-            <div class="form-field"><label>Contraseña {{editandoId?'(dejar vacía para conservarla)':'*'}}</label><input class="form-control" type="password" [(ngModel)]="form.password" name="password" [required]="!editandoId" minlength="8" /></div>
-          </div>
-          <div class="modal-footer"><button type="button" class="btn btn-outline" (click)="cerrarModal()">Cancelar</button><button class="btn btn-red" type="submit" [disabled]="guardando">{{guardando?'Guardando...':'Guardar usuario'}}</button></div>
-        </form>
+
+</div>
+
+
+<!-- ========================================== -->
+<!-- TABLA ORIGINAL DE USUARIOS -->
+<!-- ========================================== -->
+
+<div class="panel data-table-wrap">
+
+  <table class="data-table">
+
+    <thead>
+
+      <tr>
+
+        <th>Usuario</th>
+
+        <th>Correo electrónico</th>
+
+        <th>Rol</th>
+
+        <th>Estado</th>
+
+        <th>Registro</th>
+
+        <th class="text-right">
+          Acciones
+        </th>
+
+      </tr>
+
+    </thead>
+
+    <tbody>
+
+      @for (u of usuariosFiltrados; track u.id_usuario) {
+
+        <tr>
+
+          <!-- NOMBRE -->
+
+          <td class="font-bold text-zinc-900">
+            {{ u.nombre }}
+          </td>
+
+          <!-- CORREO -->
+
+          <td>
+            {{ u.correo }}
+          </td>
+
+          <!-- ROL -->
+
+          <td>
+
+            <span
+              class="chip"
+              [class.chip-red]="u.rol === 'Administrador'"
+              [class.chip-yellow]="u.rol === 'Empleado'"
+              [class.chip-blue]="u.rol === 'Cliente'">
+
+              {{ u.rol }}
+
+            </span>
+
+          </td>
+
+          <!-- ESTADO -->
+
+          <td>
+
+            <span
+              class="chip"
+              [class.chip-green]="u.estado === 1"
+              [class.chip-gray]="u.estado === 0">
+
+              {{ u.estado === 1 ? 'Activo' : 'Inactivo' }}
+
+            </span>
+
+          </td>
+
+          <!-- FECHA DE REGISTRO -->
+
+          <td class="text-zinc-500">
+            {{ u.fecha_registro?.slice(0, 10) }}
+          </td>
+
+          <!-- ACCIONES -->
+
+          <td>
+
+            <div class="actions-inline">
+
+              <!-- EDITAR -->
+
+              <button
+                class="table-action"
+                (click)="abrirEditar(u)"
+                title="Editar usuario"
+                aria-label="Editar usuario">
+
+                <app-icon name="edit" [size]="17" />
+
+              </button>
+
+              <!-- ACTIVAR / DESACTIVAR -->
+
+              <button
+                class="table-action"
+                (click)="cambiarEstado(u)"
+                [title]="u.estado === 1 ? 'Desactivar' : 'Activar'"
+                [attr.aria-label]="u.estado === 1 ? 'Desactivar usuario' : 'Activar usuario'">
+
+                <app-icon
+                  [name]="u.estado === 1 ? 'close' : 'check'"
+                  [size]="17" />
+
+              </button>
+
+            </div>
+
+          </td>
+
+        </tr>
+
+      } @empty {
+
+        <tr>
+
+          <td colspan="6" class="text-center text-zinc-400 p-10">
+
+            {{ cargando ? 'Cargando usuarios...' : 'No se encontraron usuarios.' }}
+
+          </td>
+
+        </tr>
+
+      }
+
+    </tbody>
+
+  </table>
+
+</div>
+
+
+<!-- ========================================== -->
+<!-- MODAL ORIGINAL DE CREAR / EDITAR USUARIO -->
+<!-- ========================================== -->
+
+@if (modalAbierto) {
+
+  <div
+    class="modal-backdrop"
+    (click)="cerrarModal()">
+
+    <div
+      class="modal-panel"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="usuario-title"
+      (click)="$event.stopPropagation()">
+
+
+      <!-- ENCABEZADO DEL MODAL -->
+
+      <div class="modal-header">
+
+        <h2
+          id="usuario-title"
+          class="panel-title">
+
+          {{ editandoId ? 'Editar usuario' : 'Agregar usuario' }}
+
+        </h2>
+
+        <button
+          type="button"
+          (click)="cerrarModal()"
+          aria-label="Cerrar">
+
+          <app-icon name="close" [size]="19" />
+
+        </button>
+
       </div>
+
+
+      <!-- FORMULARIO -->
+
+      <form (ngSubmit)="guardar()">
+
+        <div class="modal-body space-y-4">
+
+          @if (errorModal) {
+
+            <div class="notice notice-error">
+              {{ errorModal }}
+            </div>
+
+          }
+
+
+          <!-- NOMBRE -->
+
+          <div class="form-field">
+
+            <label>
+              Nombre completo *
+            </label>
+
+            <input
+              class="form-control"
+              [(ngModel)]="form.nombre"
+              name="nombre"
+              maxlength="100"
+              required />
+
+          </div>
+
+
+          <!-- CORREO -->
+
+          <div class="form-field">
+
+            <label>
+              Correo electrónico *
+            </label>
+
+            <input
+              class="form-control"
+              type="email"
+              [(ngModel)]="form.correo"
+              name="correo"
+              maxlength="120"
+              required />
+
+          </div>
+
+
+          <!-- ROL -->
+
+          <div class="form-field">
+
+            <label>
+              Rol *
+            </label>
+
+            <select
+              class="form-control"
+              [(ngModel)]="form.id_rol"
+              name="id_rol"
+              required>
+
+              <option [ngValue]="1">
+                Administrador
+              </option>
+
+              <option [ngValue]="2">
+                Empleado
+              </option>
+
+              <option [ngValue]="3">
+                Cliente
+              </option>
+
+            </select>
+
+          </div>
+
+
+          <!-- AVISO PARA CLIENTES -->
+
+          @if (form.id_rol === 3) {
+
+            <div class="alert-banner">
+
+              El endpoint actual crea la cuenta de usuario.
+              Para pedidos del cliente también será necesario
+              un registro relacionado en la tabla
+
+              <code>clientes</code>.
+
+            </div>
+
+          }
+
+
+          <!-- CONTRASEÑA -->
+
+          <div class="form-field">
+
+            <label>
+
+              Contraseña
+
+              {{ editandoId ? '(dejar vacía para conservarla)' : '*' }}
+
+            </label>
+
+            <input
+              class="form-control"
+              type="password"
+              [(ngModel)]="form.password"
+              name="password"
+              [required]="!editandoId"
+              minlength="8" />
+
+          </div>
+
+        </div>
+
+
+        <!-- BOTONES -->
+
+        <div class="modal-footer">
+
+          <button
+            type="button"
+            class="btn btn-outline"
+            (click)="cerrarModal()">
+
+            Cancelar
+
+          </button>
+
+          <button
+            class="btn btn-red"
+            type="submit"
+            [disabled]="guardando">
+
+            {{ guardando ? 'Guardando...' : 'Guardar usuario' }}
+
+          </button>
+
+        </div>
+
+      </form>
+
     </div>
-  }
+
+  </div>
+
+}

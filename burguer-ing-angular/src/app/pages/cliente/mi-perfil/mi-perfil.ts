@@ -1,3 +1,4 @@
+
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -92,7 +93,6 @@ export class MiPerfil implements OnInit {
   // =====================================================
 
   private obtenerIdCliente(): number | null {
-
     const usuario = this.auth.usuario();
 
     if (!usuario || usuario.id_cliente == null) {
@@ -107,7 +107,6 @@ export class MiPerfil implements OnInit {
   // =====================================================
 
   cargarPerfil(): void {
-
     const idCliente = this.obtenerIdCliente();
 
     if (idCliente === null) {
@@ -124,7 +123,6 @@ export class MiPerfil implements OnInit {
     ).subscribe({
 
       next: (respuesta) => {
-
         this.nombre = respuesta.nombre || '';
         this.correo = respuesta.correo || '';
         this.telefono = respuesta.telefono || '';
@@ -149,7 +147,6 @@ export class MiPerfil implements OnInit {
       },
 
       error: (error) => {
-
         this.cargando = false;
 
         this.mensajeError =
@@ -165,7 +162,6 @@ export class MiPerfil implements OnInit {
   // =====================================================
 
   guardarCambios(): void {
-
     this.mensaje = '';
     this.mensajeError = '';
 
@@ -204,7 +200,6 @@ export class MiPerfil implements OnInit {
     ).subscribe({
 
       next: (respuesta) => {
-
         this.guardando = false;
 
         this.mensaje =
@@ -215,7 +210,6 @@ export class MiPerfil implements OnInit {
         const usuarioActual = this.auth.usuario();
 
         if (usuarioActual) {
-
           const usuarioActualizado = {
             ...usuarioActual,
             nombre: this.nombre.trim(),
@@ -234,7 +228,6 @@ export class MiPerfil implements OnInit {
       },
 
       error: (error) => {
-
         this.guardando = false;
 
         this.mensajeError =
@@ -250,7 +243,6 @@ export class MiPerfil implements OnInit {
   // =====================================================
 
   cargarDirecciones(): void {
-
     const idCliente = this.obtenerIdCliente();
 
     if (idCliente === null) {
@@ -266,7 +258,6 @@ export class MiPerfil implements OnInit {
       },
 
       error: (error) => {
-
         this.errorDireccion =
           error?.error?.mensaje ||
           'No se pudieron consultar las direcciones.';
@@ -280,7 +271,6 @@ export class MiPerfil implements OnInit {
   // =====================================================
 
   nuevaDireccion(): void {
-
     this.limpiarFormularioDireccion();
 
     this.idDireccionEditando = null;
@@ -295,7 +285,6 @@ export class MiPerfil implements OnInit {
   // =====================================================
 
   editarDireccion(direccion: DireccionCliente): void {
-
     this.idDireccionEditando = direccion.id_direccion;
 
     this.direccionForm = {
@@ -317,7 +306,6 @@ export class MiPerfil implements OnInit {
   // =====================================================
 
   guardarDireccion(): void {
-
     this.mensajeDireccion = '';
     this.errorDireccion = '';
 
@@ -350,7 +338,6 @@ export class MiPerfil implements OnInit {
 
     // EDITAR DIRECCIÓN EXISTENTE
     if (this.idDireccionEditando !== null) {
-
       const idDireccion = this.idDireccionEditando;
 
       this.api.put<RespuestaApi>(
@@ -359,7 +346,6 @@ export class MiPerfil implements OnInit {
       ).subscribe({
 
         next: (respuesta) => {
-
           this.guardandoDireccion = false;
 
           this.mensajeDireccion =
@@ -374,7 +360,6 @@ export class MiPerfil implements OnInit {
         },
 
         error: (error) => {
-
           this.guardandoDireccion = false;
 
           this.errorDireccion =
@@ -394,7 +379,6 @@ export class MiPerfil implements OnInit {
     ).subscribe({
 
       next: (respuesta) => {
-
         this.guardandoDireccion = false;
 
         this.mensajeDireccion =
@@ -408,7 +392,6 @@ export class MiPerfil implements OnInit {
       },
 
       error: (error) => {
-
         this.guardandoDireccion = false;
 
         this.errorDireccion =
@@ -424,7 +407,6 @@ export class MiPerfil implements OnInit {
   // =====================================================
 
   eliminarDireccion(direccion: DireccionCliente): void {
-
     const idCliente = this.obtenerIdCliente();
 
     if (idCliente === null) {
@@ -449,7 +431,6 @@ export class MiPerfil implements OnInit {
     ).subscribe({
 
       next: (respuesta) => {
-
         this.mensajeDireccion =
           respuesta.mensaje || 'Dirección eliminada correctamente.';
 
@@ -457,7 +438,6 @@ export class MiPerfil implements OnInit {
       },
 
       error: (error) => {
-
         this.errorDireccion =
           error?.error?.mensaje ||
           'No se pudo eliminar la dirección.';
@@ -471,7 +451,6 @@ export class MiPerfil implements OnInit {
   // =====================================================
 
   cancelarDireccion(): void {
-
     this.mostrarFormularioDireccion = false;
     this.idDireccionEditando = null;
 
@@ -485,7 +464,6 @@ export class MiPerfil implements OnInit {
   // =====================================================
 
   private limpiarFormularioDireccion(): void {
-
     this.direccionForm = {
       calle: '',
       numero: '',
@@ -500,7 +478,6 @@ export class MiPerfil implements OnInit {
   // =====================================================
 
   get iniciales(): string {
-
     const partes = this.nombre
       .trim()
       .split(/\s+/)
@@ -525,18 +502,27 @@ export class MiPerfil implements OnInit {
   // =====================================================
 
   get estadoCedulaTexto(): string {
-
     if (this.cedula.trim() === '') {
       return 'Sin registro';
     }
 
-    if (this.estadoAcreditacion === 'Validada') {
-      return 'Acreditación validada';
+    const estado = this.estadoAcreditacion.trim().toLowerCase();
+
+    if (
+      estado === 'validada' ||
+      estado === 'aprobada'
+    ) {
+      return 'Acreditación aprobada';
+    }
+
+    if (estado === 'denegada') {
+      return 'Acreditación denegada';
     }
 
     if (
-      this.estadoAcreditacion === 'Pendiente' ||
-      this.estadoAcreditacion === 'En revisión'
+      estado === 'pendiente' ||
+      estado === 'en revisión' ||
+      estado === 'sin acreditar'
     ) {
       return 'Pendiente de verificación';
     }

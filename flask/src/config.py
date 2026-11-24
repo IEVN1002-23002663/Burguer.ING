@@ -1,9 +1,9 @@
 class DevelopmentConfig():
      DEBUG=True
      MYSQL_HOST='localhost'
-     MYSQL_USER='Carlos'
+     MYSQL_USER='valadez'
      MYSQL_PASSWORD='root'
-     MYSQL_DB='burguer_ing'
+     MYSQL_DB='burger_ing'
      MYSQL_CURSORCLASS = 'Cursor'
      JWT_SECRET_KEY = 'BurguerING_Clave_Secreta_Desarrollo_2026'
 

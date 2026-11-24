@@ -1,4 +1,3 @@
-
 <!-- ====================================== -->
 <!-- ENCABEZADO -->
 <!-- ====================================== -->
@@ -31,6 +30,7 @@
 
 </section>
 
+
 <!-- ====================================== -->
 <!-- MENSAJES -->
 <!-- ====================================== -->
@@ -50,6 +50,7 @@
   </div>
 
 }
+
 
 <!-- ====================================== -->
 <!-- INDICADORES -->
@@ -99,6 +100,7 @@
   </div>
 
 </section>
+
 
 <!-- ====================================== -->
 <!-- SELECCIONAR CLIENTE -->
@@ -193,6 +195,7 @@
 
 </div>
 
+
 <!-- ====================================== -->
 <!-- PESTAÑAS -->
 <!-- ====================================== -->
@@ -221,6 +224,7 @@
 
 </div>
 
+
 <!-- ====================================== -->
 <!-- HISTORIAL DE PEDIDOS -->
 <!-- ====================================== -->
@@ -237,12 +241,10 @@
       Por ahora se muestran solamente los pedidos
       del cliente seleccionado.
 
-      Más abajo te explico cómo habilitar el
-      listado general.
-
     </div>
 
   }
+
 
   <!-- FILTROS -->
 
@@ -316,6 +318,7 @@
     </button>
 
   </div>
+
 
   <!-- TABLA DE PEDIDOS -->
 
@@ -435,6 +438,7 @@
 
 } @else {
 
+
   <!-- ====================================== -->
   <!-- CREAR PEDIDO -->
   <!-- ====================================== -->
@@ -443,6 +447,7 @@
     class="grid grid-cols-1 xl:grid-cols-[1fr_380px] gap-5">
 
     <div class="space-y-5">
+
 
       <!-- AGREGAR PRODUCTOS -->
 
@@ -519,6 +524,7 @@
         </div>
 
       </div>
+
 
       <!-- PRODUCTOS DEL CARRITO -->
 
@@ -612,6 +618,7 @@
 
     </div>
 
+
     <!-- ====================================== -->
     <!-- CONFIRMACIÓN DEL PEDIDO -->
     <!-- ====================================== -->
@@ -621,6 +628,7 @@
       <h2 class="panel-title">
         Confirmar pedido
       </h2>
+
 
       <!-- ENTREGA -->
 
@@ -646,6 +654,7 @@
         </select>
 
       </div>
+
 
       <!-- DIRECCIÓN A DOMICILIO -->
 
@@ -684,6 +693,7 @@
           </select>
 
         </div>
+
 
         <!-- NUEVA DIRECCIÓN -->
 
@@ -787,6 +797,7 @@
 
       }
 
+
       <!-- OBSERVACIONES -->
 
       <div class="form-field">
@@ -804,6 +815,7 @@
         </textarea>
 
       </div>
+
 
       <!-- TOTALES -->
 
@@ -849,8 +861,22 @@
 
         }
 
-        <div
-          class="flex justify-between font-extrabold text-lg border-t border-zinc-100 pt-3">
+        <div class="flex justify-between text-sm">
+
+          <span>Costo de entrega</span>
+
+          <strong>
+
+            {{
+              (tipoEntrega === 'Domicilio' ? 50 : 0)
+                | currency:'MXN'
+            }}
+
+          </strong>
+
+        </div>
+
+        <div class="flex justify-between font-extrabold text-lg border-t border-zinc-100 pt-3">
 
           <span>
             Total estimado
@@ -859,7 +885,8 @@
           <span>
 
             {{
-              totalEstimado
+              totalEstimado +
+              (tipoEntrega === 'Domicilio' ? 50 : 0)
                 | currency:'MXN'
             }}
 
@@ -874,9 +901,11 @@
         Flask calcula el total y el descuento definitivo
         al confirmar.
 
-        El costo de entrega configurado actualmente es $0.00.
+        El costo de entrega es de $50.00 para domicilio
+        y $0.00 para recoger en mostrador.
 
       </p>
+
 
       <!-- BOTÓN CONFIRMAR -->
 
@@ -900,6 +929,7 @@
 
 }
 
+
 <!-- ====================================== -->
 <!-- MODAL DE DETALLE DEL PEDIDO -->
 <!-- ====================================== -->
@@ -915,6 +945,9 @@
       role="dialog"
       aria-modal="true"
       (click)="$event.stopPropagation()">
+
+
+      <!-- ENCABEZADO DEL MODAL -->
 
       <div class="modal-header">
 
@@ -935,6 +968,9 @@
 
       </div>
 
+
+      <!-- CONTENIDO DEL MODAL -->
+
       <div class="modal-body space-y-3">
 
         <p class="text-sm">
@@ -952,6 +988,87 @@
           </strong>
 
         </p>
+
+
+        <!-- ====================================== -->
+        <!-- ACTUALIZAR ESTADO -->
+        <!-- ====================================== -->
+
+        <div class="border border-zinc-200 rounded-xl p-4 space-y-3">
+
+          <h3 class="font-bold">
+            Actualizar estado del pedido
+          </h3>
+
+          <p class="text-xs text-zinc-500">
+            Estado actual: {{ detalle.estado }}
+          </p>
+
+          <div class="form-field">
+
+            <label for="estadoPedido">
+              Nuevo estado
+            </label>
+
+            <select
+              id="estadoPedido"
+              class="form-control"
+              [(ngModel)]="estadoSeleccionado"
+              [disabled]="procesando || estadosDisponibles.length === 0">
+
+              <option [ngValue]="detalle.estado">
+                {{ detalle.estado }}
+              </option>
+
+              @for (
+                estado of estadosDisponibles;
+                track estado
+              ) {
+
+                <option [ngValue]="estado">
+                  {{ estado }}
+                </option>
+
+              }
+
+            </select>
+
+          </div>
+
+          @if (estadosDisponibles.length > 0) {
+
+            <button
+              type="button"
+              class="btn btn-red w-full"
+              [disabled]="
+                procesando ||
+                !estadoSeleccionado ||
+                estadoSeleccionado === detalle.estado
+              "
+              (click)="actualizarEstadoPedido()">
+
+              {{
+                procesando
+                  ? 'Actualizando estado...'
+                  : 'Guardar nuevo estado'
+              }}
+
+            </button>
+
+          } @else {
+
+            <p class="text-xs text-zinc-500">
+              Este pedido ya tiene un estado final y no permite más cambios.
+            </p>
+
+          }
+
+        </div>
+
+
+        <!-- ====================================== -->
+        <!-- PRODUCTOS -->
+        <!-- ====================================== -->
 
         <h3 class="font-bold">
           Productos
@@ -986,7 +1103,10 @@
 
         }
 
+
+        <!-- ====================================== -->
         <!-- RESUMEN ECONÓMICO -->
+        <!-- ====================================== -->
 
         <div class="flex justify-between text-sm">
 
@@ -1020,6 +1140,23 @@
 
         </div>
 
+        <div class="flex justify-between text-sm">
+
+          <span>
+            Costo de entrega
+          </span>
+
+          <strong>
+
+            {{
+              detalle.costo_entrega
+                | currency:'MXN'
+            }}
+
+          </strong>
+
+        </div>
+
         <div class="flex justify-between font-extrabold text-lg">
 
           <span>Total</span>
@@ -1035,7 +1172,10 @@
 
         </div>
 
+
+        <!-- ====================================== -->
         <!-- HISTORIAL -->
+        <!-- ====================================== -->
 
         <h3 class="font-bold pt-3">
           Historial del pedido

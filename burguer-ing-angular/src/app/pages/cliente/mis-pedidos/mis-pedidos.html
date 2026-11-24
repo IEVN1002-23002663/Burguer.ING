@@ -1,4 +1,3 @@
-
 <section class="min-h-screen bg-zinc-50 px-4 py-10 sm:px-8">
 
   <!-- ENCABEZADO -->
@@ -19,7 +18,7 @@
     </div>
 
     <!-- RESUMEN -->
-    <div class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
 
       <div class="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
         <p class="text-sm text-zinc-500">Total de pedidos</p>
@@ -46,6 +45,13 @@
         <p class="text-sm text-zinc-500">Listos para recoger</p>
         <p class="mt-2 text-3xl font-black text-green-600">
           {{ pedidosListos }}
+        </p>
+      </div>
+
+      <div class="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+        <p class="text-sm text-zinc-500">Cancelados</p>
+        <p class="mt-2 text-3xl font-black text-red-600">
+          {{ pedidosCancelados }}
         </p>
       </div>
 
@@ -223,7 +229,31 @@
               Seguimiento de pedido
             </h4>
 
-            <div class="flex flex-wrap gap-2">
+            <!-- PEDIDO CANCELADO -->
+            <div
+              *ngIf="pedido.estado === 'Cancelado'"
+              class="rounded-xl border border-red-200 bg-red-50 p-4">
+
+              <div class="flex items-center gap-3">
+                <span class="text-2xl">❌</span>
+
+                <div>
+                  <p class="font-extrabold text-red-700">
+                    Pedido cancelado
+                  </p>
+
+                  <p class="mt-1 text-sm text-red-600">
+                    Este pedido fue cancelado y ya no tendrá más cambios de estado.
+                  </p>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- SEGUIMIENTO NORMAL -->
+            <div
+              *ngIf="pedido.estado !== 'Cancelado'"
+              class="flex flex-wrap gap-2">
 
               <!-- PENDIENTE -->
               <div

@@ -14,14 +14,12 @@
 
   <aside class="sidebar" [class.is-open]="menuAbierto">
 
-    <!-- LOGO ORIGINAL CON IMAGEN PERSONALIZADA -->
-
+    <!-- LOGO -->
     <a
-      routerLink="/admin/dashboard"
+      [routerLink]="rutaInicio"
       class="logo-band"
       (click)="menuAbierto=false">
 
-      <!-- Cuadro rojo con bordes redondeados -->
       <span class="logo-square overflow-hidden">
 
         <img
@@ -32,7 +30,6 @@
 
       </span>
 
-      <!-- Nombre original -->
       <span class="logo-name">
         Burguer<span class="logo-ing">.ING</span>
       </span>
@@ -51,8 +48,7 @@
 
         León, Guanajuato
 
-        <span
-          class="bg-emerald-400 w-2 h-2 rounded-full">
+        <span class="bg-emerald-400 w-2 h-2 rounded-full">
         </span>
 
       </strong>
@@ -60,7 +56,7 @@
     </div>
 
     <!-- ====================================== -->
-    <!-- MÓDULOS ADMINISTRATIVOS -->
+    <!-- MÓDULOS -->
     <!-- ====================================== -->
 
     <nav
@@ -96,9 +92,7 @@
     <div class="sidebar-footer">
 
       <div class="text-[11px] text-zinc-400 mb-3 px-2">
-
-        Panel escolar · Angular + Flask
-
+        {{ textoPie }}
       </div>
 
       <button
@@ -178,7 +172,7 @@
 
       <div class="flex items-center gap-3 sm:gap-5">
 
-        <!-- Panel administrativo -->
+        <!-- Panel según el rol -->
 
         <span
           class="hidden md:flex text-xs font-bold bg-zinc-100 rounded-xl px-4 py-2 items-center gap-2">
@@ -188,7 +182,7 @@
             [size]="16"
           />
 
-          Panel administrativo
+          {{ nombrePanel }}
 
         </span>
 
