@@ -367,3 +367,105 @@ def reporte_inventario():
 
     finally:
         cursor.close()
+
+
+# ==========================================
+# GET: Indicadores y graficas del dashboard
+# ==========================================
+
+@finanzas_bp.route('/reportes/dashboard', methods=['GET'])
+def reporte_dashboard():
+    from datetime import date, timedelta
+
+    agrupacion = request.args.get('agrupacion', 'dia')
+    if agrupacion not in ('dia', 'mes'):
+        return jsonify({'mensaje': 'Agrupacion no valida.'}), 400
+
+    try:
+        inicio = date.fromisoformat(request.args['fecha_inicio']) if request.args.get('fecha_inicio') else None
+        fin = date.fromisoformat(request.args['fecha_fin']) if request.args.get('fecha_fin') else None
+        if inicio and fin and inicio > fin:
+            return jsonify({'mensaje': 'La fecha inicial debe ser anterior a la final.'}), 400
+    except ValueError:
+        return jsonify({'mensaje': 'Usa fechas con formato AAAA-MM-DD.'}), 400
+
+    cursor = mysql.connection.cursor()
+    try:
+        where, params = obtener_filtros('v.fecha_venta')
+        # Expresiones fijas: nunca insertar texto del usuario en el SQL.
+        periodo = 'DATE(v.fecha_venta)' if agrupacion == 'dia' else (
+            'DATE_SUB(DATE(v.fecha_venta), INTERVAL (DAYOFMONTH(v.fecha_venta) - 1) DAY)'
+        )
+        cursor.execute(f"""
+            SELECT {periodo} AS fecha, COUNT(*), COALESCE(SUM(v.total), 0)
+            FROM ventas v {where}
+            GROUP BY fecha ORDER BY fecha
+        """, tuple(params))
+        datos = {fila[0]: (int(fila[1]), float(fila[2])) for fila in cursor.fetchall()}
+        serie = []
+        # Incluir dias/meses sin ventas para que la tendencia no oculte huecos.
+        if datos:
+            actual = inicio or min(datos)
+            limite = fin or max(datos)
+            if agrupacion == 'mes':
+                actual = actual.replace(day=1)
+                limite = limite.replace(day=1)
+            while actual <= limite:
+                cantidad, total = datos.get(actual, (0, 0.0))
+                serie.append({'fecha': actual.isoformat() if agrupacion == 'dia' else actual.strftime('%Y-%m'),
+                              'cantidad': cantidad, 'total': total})
+                if agrupacion == 'dia':
+                    actual += timedelta(days=1)
+                else:
+                    actual = (actual.replace(day=28) + timedelta(days=4)).replace(day=1)
+
+        # Solo pagos completados ligados a ventas; se suman montos de pago,
+        # no el total de la venta repetido por cada pago parcial.
+        filtro_pago = where + (' AND ' if where else ' WHERE ') + "pg.estado = 'Completado'"
+        cursor.execute(f"""
+            SELECT pg.metodo_pago, COUNT(DISTINCT v.id_venta), SUM(pg.monto)
+            FROM ventas v JOIN pagos pg ON pg.id_pedido = v.id_pedido
+            {filtro_pago}
+            GROUP BY pg.metodo_pago ORDER BY SUM(pg.monto) DESC
+        """, tuple(params))
+        pagos = [{'nombre': f[0], 'cantidad': int(f[1]), 'total': float(f[2])}
+                 for f in cursor.fetchall()]
+
+        cursor.execute(f"""
+            SELECT dp.id_producto, pr.nombre, SUM(dp.cantidad), SUM(dp.subtotal)
+            FROM ventas v JOIN detalle_pedidos dp ON dp.id_pedido = v.id_pedido
+            JOIN productos pr ON pr.id_producto = dp.id_producto
+            {where}
+            GROUP BY dp.id_producto, pr.nombre
+            ORDER BY SUM(dp.cantidad) DESC, pr.nombre
+            LIMIT 10
+        """, tuple(params))
+        productos = [{'id': int(f[0]), 'nombre': f[1], 'cantidad': int(f[2]), 'total': float(f[3])}
+                     for f in cursor.fetchall()]
+
+        cursor.execute(f"""
+            SELECT cp.nombre, SUM(dp.cantidad)
+            FROM ventas v JOIN detalle_pedidos dp ON dp.id_pedido = v.id_pedido
+            JOIN productos pr ON pr.id_producto = dp.id_producto
+            JOIN categorias_productos cp ON cp.id_categoria_producto = pr.id_categoria_producto
+            {where}
+            GROUP BY cp.id_categoria_producto, cp.nombre
+            ORDER BY SUM(dp.cantidad) DESC, cp.nombre
+        """, tuple(params))
+        categorias = [{'nombre': f[0], 'cantidad': int(f[1])} for f in cursor.fetchall()]
+
+        cursor.execute(f"""
+            SELECT p.tipo_entrega, COUNT(*), SUM(v.total)
+            FROM ventas v JOIN pedidos p ON p.id_pedido = v.id_pedido
+            {where}
+            GROUP BY p.tipo_entrega ORDER BY COUNT(*) DESC, p.tipo_entrega
+        """, tuple(params))
+        entregas = [{'nombre': f[0], 'cantidad': int(f[1]), 'total': float(f[2])}
+                    for f in cursor.fetchall()]
+
+        return jsonify({'serie': serie, 'pagos': pagos, 'productos': productos,
+                        'categorias': categorias, 'entregas': entregas}), 200
+    except Exception as e:
+        return jsonify({'mensaje': 'Error al generar las graficas del dashboard.', 'error': str(e)}), 500
+    finally:
+        cursor.close()

@@ -1,6 +1,7 @@
 
 import { Routes } from '@angular/router';
 import { authGuard, rolGuard } from './core/guards/auth.guard';
+import { RecuperarPassword } from './pages/recuperar-password/recuperar-password';
 
 import { Shell } from './layout/shell';
 import { Login } from './pages/login/login';
@@ -28,9 +29,14 @@ import { Registro } from './pages/registro/registro';
 
 export const routes: Routes = [
 
-  // LOGIN Y REGISTRO
-  { path: 'login', component: Login },
-  { path: 'registro', component: Registro },
+
+  // LOGIN, REGISTRO Y RECUPERACIÓN
+{ path: 'login', component: Login },
+{ path: 'registro', component: Registro },
+{
+  path: 'recuperar-password',
+  component: RecuperarPassword
+},
 
   // ======================================
   // PANEL ADMINISTRATIVO

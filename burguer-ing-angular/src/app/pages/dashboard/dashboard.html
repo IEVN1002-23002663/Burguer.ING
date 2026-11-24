@@ -4,65 +4,132 @@
       <p class="page-subtitle">Resumen integral de operaciones, inventario y rentabilidad en León, Guanajuato.</p>
     </div>
     <div class="flex gap-2 flex-wrap">
-      <button class="btn btn-dark" (click)="cargar()"><app-icon name="refresh" [size]="15" /> Actualizar datos</button>
+      <button class="btn btn-dark" (click)="cargar()" [disabled]="cargando"><app-icon name="refresh" [size]="15" /> Actualizar datos</button>
       <a routerLink="/compras" class="btn btn-red"><app-icon name="cart" [size]="16" /> Ver Compras</a>
     </div>
   </div>
   @if (error) { <div class="notice notice-error mb-5">{{error}}</div> }
   @if (cargando) { <div class="loading-line">Consultando datos reales de Flask...</div> }
+  <section class="panel p-5 mb-6">
+    <div class="panel-title mb-3">Filtrar análisis de ventas</div>
+    <div class="filter-grid">
+      <label>Desde<input type="date" [(ngModel)]="fechaInicio" [disabled]="cargando" /></label>
+      <label>Hasta<input type="date" [(ngModel)]="fechaFin" [disabled]="cargando" /></label>
+      <label>Agrupar por<select [(ngModel)]="agrupacion" [disabled]="cargando"><option value="dia">Día</option><option value="mes">Mes</option></select></label>
+      <button class="btn btn-red" (click)="cargar()" [disabled]="cargando">Aplicar filtros</button>
+    </div>
+    <div class="flex gap-2 flex-wrap mt-4">
+      <button class="btn btn-outline btn-small" (click)="rangoRapido(7)" [disabled]="cargando">Últimos 7 días</button>
+      <button class="btn btn-outline btn-small" (click)="rangoRapido(30)" [disabled]="cargando">Últimos 30 días</button>
+      <button class="btn btn-outline btn-small" (click)="rangoRapido(0)" [disabled]="cargando">Todo el historial</button>
+    </div>
+    <p class="text-xs text-zinc-500 mt-3">Periodo consultado: <strong>{{periodoAplicado}}</strong> · Solo ventas registradas, incluidas las simulaciones.</p>
+  </section>
   <div class="kpi-grid mb-6">
     <section class="panel kpi">
-      <div class="flex justify-between items-start"><div class="kpi-label">Ingresos totales</div><div class="kpi-icon bg-emerald-100 text-emerald-700"><app-icon name="money" [size]="19" /></div></div>
+      <div class="flex justify-between items-start"><div class="kpi-label">Ingresos del periodo</div><div class="kpi-icon bg-emerald-100 text-emerald-700"><app-icon name="money" [size]="19" /></div></div>
       <div class="kpi-number">{{ moneda(resumen?.ventas?.monto || 0) }}</div>
       <div class="kpi-caption metric-green">{{resumen?.ventas?.cantidad || 0}} ventas registradas</div>
     </section>
     <section class="panel kpi">
       <div class="flex justify-between items-start"><div class="kpi-label">Diferencia referencial</div><div class="kpi-icon bg-red-100 text-red-600"><app-icon name="chart" [size]="19" /></div></div>
       <div class="kpi-number" [class.metric-red]="(resumen?.diferencia_referencial || 0)<0">{{ moneda(resumen?.diferencia_referencial || 0) }}</div>
-      <div class="kpi-caption">Ventas − compras − gastos · No es utilidad neta</div>
+      <div class="kpi-caption">Ventas − compras recibidas − gastos del periodo · No es utilidad neta</div>
     </section>
     <section class="panel kpi">
       <div class="flex justify-between items-start"><div class="kpi-label">Compras pendientes</div><div class="kpi-icon bg-blue-100 text-blue-700"><app-icon name="cart" [size]="19" /></div></div>
-      <div class="kpi-number">{{comprasPendientes}}</div><div class="kpi-caption">Pendientes de recibir en almacén</div>
+      <div class="kpi-number">{{comprasPendientes}}</div><div class="kpi-caption">Estado actual · no filtrado</div>
     </section>
     <section class="panel kpi border-amber-300">
       <div class="flex justify-between items-start"><div class="kpi-label text-amber-800">Alertas inventario</div><div class="kpi-icon bg-amber-500 text-white"><app-icon name="warning" [size]="19" /></div></div>
-      <div class="kpi-number metric-orange">{{resumen?.inventario?.materias_primas_stock_bajo || 0}} <span class="text-base font-normal">insumos</span></div><div class="kpi-caption metric-orange">Stock mínimo alcanzado</div>
+      <div class="kpi-number metric-orange">{{resumen?.inventario?.materias_primas_stock_bajo || 0}} <span class="text-base font-normal">insumos</span></div><div class="kpi-caption metric-orange">Estado actual · no filtrado</div>
     </section>
   </div>
-  <div class="grid grid-cols-1 xl:grid-cols-[1.4fr_1fr] gap-6 mb-6">
-    <section class="panel p-5">
-      <div class="flex justify-between gap-3 items-start mb-6">
-        <div><div class="panel-title">Ventas por día (MXN)</div><div class="text-xs text-zinc-500 mt-1">Ingresos registrados en el sistema</div></div>
-        <span class="chip chip-gray">Datos reales</span>
-      </div>
-      @if (ventasDias.length) {
-        <div class="h-[260px] flex gap-3 items-end border-b border-zinc-200 px-2 pb-1">
-          @for (dia of ventasDias; track dia.fecha) {
-            <div class="flex flex-1 flex-col h-full items-center justify-end min-w-0 gap-2" [title]="dia.fecha+' · '+moneda(dia.total)">
-              <span class="text-[10px] text-zinc-600 font-bold">{{monedaCorta(dia.total)}}</span>
-              <div class="w-[70%] max-w-[90px] rounded-t-lg bg-[#e5232a] min-h-[4px]" [style.height.%]="altoBarra(dia.total)"></div>
-            </div>
-          }
+  <section class="panel p-5 mb-6 flex flex-wrap items-center justify-between gap-3">
+    <div><div class="kpi-label">Ticket promedio del periodo</div><div class="kpi-number">{{moneda(ticketPromedio)}}</div></div>
+    <div><div class="kpi-label">Unidades vendidas</div><div class="kpi-number">{{totalUnidades}}</div></div>
+    <div><div class="kpi-label">Pagos completados</div><div class="kpi-number">{{moneda(totalPagos)}}</div></div>
+  </section>
+  <div class="analysis-grid mb-6">
+    <section class="panel p-5 chart-panel">
+      <div class="panel-title">Ventas por {{agrupacionAplicada === 'dia' ? 'día' : 'mes'}} (MXN)</div>
+      <div class="chart-sub">Ingresos netos de descuentos registrados en ventas.</div>
+      @if (serie.length) {
+        <div class="chart-scroll" tabindex="0" aria-label="Gráfica de barras, desplazamiento horizontal">
+          <div class="bar-chart" [style.min-width.px]="serie.length * 66">
+            @for (d of serie; track d.fecha) {
+              <div class="bar-column" [title]="d.fecha + ' · ' + moneda(d.total) + ' · ' + d.cantidad + ' ventas'">
+                <div class="bar-area"><div class="bar-fill" [style.height.%]="altoBarra(d.total)"><span>{{monedaCorta(d.total)}}</span></div></div>
+                <div class="bar-date">{{etiquetaFecha(d.fecha)}}</div>
+              </div>
+            }
+          </div>
         </div>
-        <div class="flex gap-3 px-2 pt-2 text-[10px] text-zinc-500">
-          @for (dia of ventasDias; track dia.fecha) { <div class="flex-1 min-w-0 text-center truncate">{{dia.fecha.slice(5)}}</div> }
-        </div>
-      } @else { <div class="empty-state">Todavía no hay ventas registradas para graficar.</div> }
+      } @else { <div class="empty-state">No hay ventas para el periodo seleccionado.</div> }
     </section>
-    <section class="panel p-5">
-      <div class="panel-title">Productos por categoría</div>
-      <div class="text-xs text-zinc-500 mt-1 mb-6">Distribución del catálogo (no representa ventas)</div>
-      @if (categorias.length) {
-        <div class="w-[230px] h-[230px] mx-auto rounded-full relative" [style.background]="gradienteDonut">
-          <div class="absolute inset-[48px] rounded-full bg-white flex items-center justify-center flex-col"><div class="text-3xl font-extrabold">{{totalProductos}}</div><div class="text-xs text-zinc-500">productos</div></div>
-        </div>
-        <div class="flex flex-wrap justify-center gap-3 mt-6">
-          @for (cat of categorias; track cat.nombre) {
-            <span class="text-[11px] text-zinc-500 flex items-center gap-2"><span class="w-3 h-3 rounded-sm" [style.background]="cat.color"></span>{{cat.nombre}} ({{cat.cantidad}})</span>
+    <section class="panel p-5 chart-panel">
+      <div class="panel-title">Métodos de pago</div>
+      <div class="chart-sub">Distribución del importe de pagos completados de las ventas del periodo.</div>
+      @if (pagos.length) {
+        <div class="donut" [style.background]="gradiente(pagos)"><div class="donut-center"><strong>{{moneda(totalPagos)}}</strong><span>importe pagado</span></div></div>
+        <div class="chart-legend">
+          @for (p of pagos; track p.nombre) {
+            <div class="legend-row"><i [style.background]="p.color"></i><span>{{p.nombre}}</span><strong>{{moneda(p.total || 0)}} · {{p.porcentaje.toFixed(1)}}%</strong></div>
           }
         </div>
-      } @else { <div class="empty-state">Sin productos disponibles para esta gráfica.</div> }
+      } @else { <div class="empty-state">Sin pagos completados en este periodo.</div> }
+    </section>
+    <section class="panel p-5 chart-panel">
+      <div class="panel-title">Productos más vendidos</div>
+      <div class="chart-sub">Top 10 por unidades vendidas, no por ingresos.</div>
+      @for (p of productos; track p.id) {
+        <div class="ranking-row">
+          <div class="ranking-label"><span>{{$index + 1}}. {{p.nombre}}</span><strong>{{p.cantidad}} u.</strong></div>
+          <div class="ranking-track"><div class="ranking-fill" [style.width.%]="anchoBarra(p.cantidad, productos)"></div></div>
+        </div>
+      } @empty { <div class="empty-state">Sin productos vendidos en este periodo.</div> }
+    </section>
+    <section class="panel p-5 chart-panel">
+      <div class="panel-title">Ventas por categoría</div>
+      <div class="chart-sub">Participación de cada categoría según unidades vendidas.</div>
+      @if (categorias.length) {
+        <div class="donut" [style.background]="gradiente(categorias)"><div class="donut-center"><strong>{{totalUnidades}}</strong><span>unidades vendidas</span></div></div>
+        <div class="chart-legend">
+          @for (c of categorias; track c.nombre) {
+            <div class="legend-row"><i [style.background]="c.color"></i><span>{{c.nombre}}</span><strong>{{c.cantidad}} u. · {{c.porcentaje.toFixed(1)}}%</strong></div>
+          }
+        </div>
+      } @else { <div class="empty-state">Sin categorías vendidas en este periodo.</div> }
+    </section>
+    <section class="panel p-5 chart-panel">
+      <div class="panel-title">Tendencia de ingresos</div>
+      <div class="chart-sub">Evolución cronológica. Los periodos sin ventas se muestran en cero.</div>
+      @if (serie.length) {
+        <div class="chart-scroll" tabindex="0" aria-label="Gráfica de línea, desplazamiento horizontal">
+          <svg class="line-chart" [attr.viewBox]="'0 0 ' + anchoGrafica + ' 253'" [style.min-width.px]="anchoGrafica" role="img" aria-label="Tendencia de ingresos en pesos mexicanos">
+            @for (n of [0, 0.25, 0.5, 0.75, 1]; track n) {
+              <line x1="56" [attr.x2]="anchoGrafica - 26" [attr.y1]="puntoY(maxIngreso * n)" [attr.y2]="puntoY(maxIngreso * n)" stroke="#e5e7eb" />
+              <text x="49" [attr.y]="puntoY(maxIngreso * n) + 4" text-anchor="end" class="axis-label">{{monedaCorta(maxIngreso * n)}}</text>
+            }
+            <polyline [attr.points]="linea" fill="none" stroke="#e5232a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" />
+            @for (d of serie; track d.fecha) {
+              <circle [attr.cx]="puntoX($index)" [attr.cy]="puntoY(d.total)" r="4" fill="#e5232a"><title>{{d.fecha}} · {{moneda(d.total)}}</title></circle>
+              <text [attr.x]="puntoX($index)" y="240" text-anchor="middle" class="axis-label">{{etiquetaFecha(d.fecha)}}</text>
+            }
+          </svg>
+        </div>
+      } @else { <div class="empty-state">No hay datos para mostrar la tendencia.</div> }
+    </section>
+    <section class="panel p-5 chart-panel">
+      <div class="panel-title">Ventas por tipo de entrega</div>
+      <div class="chart-sub">Número de ventas e ingresos por modalidad.</div>
+      @for (e of entregas; track e.nombre) {
+        <div class="ranking-row">
+          <div class="ranking-label"><span>{{e.nombre}}</span><strong>{{e.cantidad}} ventas</strong></div>
+          <div class="ranking-track"><div class="ranking-fill delivery-fill" [style.width.%]="anchoBarra(e.cantidad, entregas)"></div></div>
+          <div class="text-xs text-zinc-500 mt-1">{{moneda(e.total || 0)}}</div>
+        </div>
+      } @empty { <div class="empty-state">Sin ventas por modalidad en este periodo.</div> }
     </section>
   </div>
   <div class="grid grid-cols-1 xl:grid-cols-[1.4fr_1fr] gap-6">
